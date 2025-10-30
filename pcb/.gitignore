@@ -1,0 +1,14 @@
+# KiCad 
+*.kicad_prl
+fp-info-cache
+*-backups/
+*.bak
+*~
+gerberfiles/
+*.zip
+*.rar
+*.7z
+*.net
+*.drc
+*.rpt
+*.log
