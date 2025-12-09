@@ -1,0 +1,5 @@
+config SHIELD_CHIRALITY_LEFT
+  def_bool $(shields_list_contains,chirality_left)
+
+config SHIELD_CHIRALITY_RIGHT
+  def_bool $(shields_list_contains,chirality_right)

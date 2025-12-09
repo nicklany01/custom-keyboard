@@ -1,0 +1,17 @@
+build/
+
+# OpenSCAD autosave/backup files
+*.scad~                   
+*~                          
+.#*                        
+
+# OpenSCAD geometry exports
+*.csg
+*.off
+*.dxf_export
+*.dxf
+*.png
+
+# Ignore OpenSCAD pickle caches
+.cache/
+.scad-cache/
