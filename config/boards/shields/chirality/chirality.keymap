@@ -66,6 +66,7 @@
     compatible = "zmk,keymap";
 
     base {
+      label = "Base";
       bindings = <
         &kp Q        &kp W            &kp E                &kp R           &kp T      &kp Y      &kp U           &kp I                 &kp O             &kp P
         &hm LCTRL A  &hm LEFT_META S  &shift LEFT_SHIFT D  &hm LEFT_ALT F  &kp G      &kp H      &hm LEFT_ALT J  &shift RIGHT_SHIFT K  &hm RIGHT_META L  &hm RCTRL SEMICOLON
@@ -75,6 +76,7 @@
     };
 
     gaming {
+      label = "Gaming";
       bindings = <
         &kp Q  &kp W  &kp E      &kp R  &kp T        &kp Y      &kp U  &kp I        &kp O    &kp P
         &kp A  &kp S  &kp D      &kp F  &kp G        &kp H      &kp J  &kp K        &kp L    &kp SEMI
@@ -84,6 +86,7 @@
     };
 
     numbers {
+      label = "Numbers";
       bindings = <
         &kp F1              &kp F2                  &kp F3                      &kp F4                 &kp F5          &kp F6         &kp F7                 &kp F8                 &kp F9             &kp F10
         &hm LCTRL NUMBER_1  &hm LEFT_META NUMBER_2  &shift LEFT_SHIFT NUMBER_3  &hm LEFT_ALT NUMBER_4  &kp NUMBER_5    &kp NUMBER_6   &hm LEFT_ALT NUMBER_7  &shift RIGHT_SHIFT N8  &hm RIGHT_META N9  &hm LCTRL N0
@@ -93,6 +96,7 @@
     };
 
     extras {
+      label = "Extras";
       bindings = <
         &trans                      &trans                           &trans                        &trans                    &trans               &trans          &trans        &trans     &trans          &kp DELETE
         &hm LCTRL LEFT_PARENTHESIS  &hm LEFT_META RIGHT_PARENTHESIS  &shift LEFT_SHIFT LEFT_BRACE  &hm LEFT_ALT RIGHT_BRACE  &kp DOUBLE_QUOTES    &kp LEFT        &kp DOWN_ARROW  &kp UP_ARROW  &kp RIGHT  &kp BACKSPACE
@@ -102,6 +106,7 @@
     };
 
     mouse {
+      label = "Mouse";
       bindings = <
         &trans        &trans        &trans        &trans        &sys_reset      &msc SCRL_LEFT  &msc SCRL_DOWN  &msc SCRL_UP  &msc SCRL_RIGHT  &mkp RCLK
         &bt BT_SEL 0  &bt BT_SEL 1  &bt BT_SEL 2  &bt BT_SEL 3  &bt BT_SEL 4    &mmv MOVE_LEFT  &mmv MOVE_DOWN  &mmv MOVE_UP  &mmv MOVE_RIGHT  &mkp LCLK
@@ -111,6 +116,7 @@
     };
 
     functionality {
+      label = "Mouse";
       bindings = <
         &kp F11    &kp F12        &kp F13         &kp F14       &kp F15      &kp F16     &kp F17               &kp F18               &kp F19     &kp F20
         &kp LCTRL  &kp LEFT_META  &kp LEFT_SHIFT  &kp LEFT_ALT  &kp CAPS     &kp K_MUTE  &kp C_VOLUME_DOWN     &kp C_VOLUME_UP       &pp_n_p     &kp BACKSPACE

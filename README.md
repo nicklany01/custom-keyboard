@@ -15,7 +15,7 @@ git clone https://github.com/zmkfirmware/zmk.git
 3. From the zmk directory, run the following commands to build the firwmare, ensuring to replace "/path/to/this/repo/config" with the path to the config directory in this repository:
 ```
 cd app
-west build -p -b nice_nano_v2 -- -DSHIELD=custom-keyboard -DZMK_CONFIG=/path/to/this/repo/config
+west build -p -b nice_nano_v2 -- -DSHIELD="chirality nice_view" -DZMK_CONFIG=/path/to/this/repo/config
 ```
 The built firmware file can be found at "/path/to/zmk/app/build/zephyr/zmk.uf2", and can be flashed with the [flash instructions](#flashing-instructions) above, treating "zmk.uf2" as "firmware.uf2".
 For more information, see the [ZMK documentation](https://zmk.dev/docs/development/local-toolchain/setup/native) and [Zephyr documentation](https://docs.zephyrproject.org/3.5.0/develop/getting_started/index.html) 
