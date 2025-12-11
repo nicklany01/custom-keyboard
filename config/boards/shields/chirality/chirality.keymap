@@ -12,7 +12,19 @@
     vol_encoder: vol_encoder {
       compatible = "zmk,behavior-sensor-rotate";
       #sensor-binding-cells = <0>;
-      bindings = <&kp C_VOL_UP>, <&kp C_VOL_DN>;
+      bindings = <&kp C_VOL_DN>, <&kp C_VOL_UP>;
+    };
+
+    scroll_encoder: scroll_encoder {
+      compatible = "zmk,behavior-sensor-rotate";
+      #sensor-binding-cells = <0>;
+      bindings = <&kp DOWN>, <&kp UP>;
+    };
+
+    window_scroll_encoder: window_scroll_encoder {
+        compatible = "zmk,behavior-sensor-rotate";
+        #sensor-binding-cells = <0>;
+        bindings = <&kp LG(RIGHT)>, <&kp LG(LEFT)>;
     };
 
     hm: homerow_mods {
@@ -53,12 +65,12 @@
 
     Escape {
       bindings = <&kp ESCAPE>;
-      key-positions = <13 27>;
+      key-positions = <10 22>;
     };
 
     Gaming {
       bindings = <&tog 1>;
-      key-positions = <31 27>;
+      key-positions = <10 14>;
     };
   };
 
@@ -73,6 +85,7 @@
         &kp Z        &kp X            &kp C                &kp V           &kp B      &kp N      &kp M           &kp COMMA             &kp DOT           &kp FSLH
                      &kp A          &kp TAB      &mo 2      &kp SPACE      &kp RET    &mo 3      &mo 4    &kp B
       >;
+      sensor-bindings = <&window_scroll_encoder &vol_encoder>;
     };
 
     gaming {
@@ -83,6 +96,7 @@
         &kp Z  &kp X  &kp C      &kp V  &kp B        &kp N      &kp M  &kp COMMA    &kp DOT  &kp FSLH
             &kp A   &kp LSHFT  &mo 2  &kp SPACE    &kp ENTER  &mo 3  &mo 4    &kp B
       >;
+      sensor-bindings = <&window_scroll_encoder &vol_encoder>;
     };
 
     numbers {
@@ -93,6 +107,7 @@
         &kp GRAVE           &kp TILDE               &kp MINUS                   &kp PLUS               &kp EQUAL       &kp BACKSLASH  &kp PIPE               &kp UNDERSCORE         &trans             &trans
                                             &kp A  &mo 4                       &mo 5                  &kp SPACE       &kp RETURN     &mo 5                  &mo 4     &kp B
       >;
+      sensor-bindings = <&window_scroll_encoder &vol_encoder>;
     };
 
     extras {
@@ -103,6 +118,7 @@
         &kp LESS_THAN               &kp GREATER_THAN                 &kp LEFT_BRACKET              &kp RIGHT_BRACKET         &kp SQT              &kp HOME        &kp PAGE_DOWN   &kp PAGE_UP   &kp END    &kp K_CONTEXT_MENU
                                                                 &kp A   &kp TAB                       &mo 5                     &kp SPACE            &kp RET   &mo 5           &mo 4      &kp B
       >;
+      sensor-bindings = <&window_scroll_encoder &vol_encoder>;
     };
 
     mouse {
@@ -113,16 +129,18 @@
         &trans        &trans        &trans        &trans        &bt BT_CLR      &mkp MB4        &mkp LCLK       &mkp RCLK     &mkp MCLK        &mkp MB5
                                         &kp B   &kp TAB       &mo 5         &kp SPACE       &kp RETURN      &mo 5           &trans    &kp B
       >;
+      sensor-bindings = <&window_scroll_encoder &vol_encoder>;
     };
 
     functionality {
-      label = "Mouse";
+      label = "Function";
       bindings = <
         &kp F11    &kp F12        &kp F13         &kp F14       &kp F15      &kp F16     &kp F17               &kp F18               &kp F19     &kp F20
         &kp LCTRL  &kp LEFT_META  &kp LEFT_SHIFT  &kp LEFT_ALT  &kp CAPS     &kp K_MUTE  &kp C_VOLUME_DOWN     &kp C_VOLUME_UP       &pp_n_p     &kp BACKSPACE
         &trans     &trans         &trans          &trans        &trans       &kp C_PREV  &kp C_BRIGHTNESS_DEC  &kp C_BRIGHTNESS_INC  &kp C_NEXT  &trans
                                 &kp A     &kp TAB         &trans        &kp SPACE    &kp ENTER   &trans                &trans   &kp B
       >;
+      sensor-bindings = <&window_scroll_encoder &vol_encoder>;
     };
   };
 };
