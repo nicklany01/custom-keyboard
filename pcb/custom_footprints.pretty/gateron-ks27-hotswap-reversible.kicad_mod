@@ -86,46 +86,6 @@
 		(uuid "d7fe205a-bd65-40d5-bdec-36690b0dfc4d")
 	)
 	(fp_line
-		(start -7 -7)
-		(end -7 7)
-		(stroke
-			(width 0.12)
-			(type solid)
-		)
-		(layer "Eco2.User")
-		(uuid "1f2c3834-2d3f-4a96-b25d-7dd282de743d")
-	)
-	(fp_line
-		(start -7 7)
-		(end 7 7)
-		(stroke
-			(width 0.12)
-			(type solid)
-		)
-		(layer "Eco2.User")
-		(uuid "3c274a74-d65e-4172-bf55-4b4dd3e469f8")
-	)
-	(fp_line
-		(start 7 -7)
-		(end -7 -7)
-		(stroke
-			(width 0.12)
-			(type solid)
-		)
-		(layer "Eco2.User")
-		(uuid "51651b43-e2a6-4c95-9183-86f07148f463")
-	)
-	(fp_line
-		(start 7 7)
-		(end 7 -7)
-		(stroke
-			(width 0.12)
-			(type solid)
-		)
-		(layer "Eco2.User")
-		(uuid "ae9e06f8-26c4-4371-a8cd-589284e39b85")
-	)
-	(fp_line
 		(start -7.5 -7.5)
 		(end -7.5 7.5)
 		(stroke
@@ -175,6 +135,17 @@
 		(fill no)
 		(layer "F.Fab")
 		(uuid "7ff60a29-4295-448e-be74-a64526861f75")
+	)
+	(fp_rect
+		(start -7 -7)
+		(end 7 7)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(fill no)
+		(layer "User.2")
+		(uuid "0336b840-c1e8-4171-9e46-94c22e86ff60")
 	)
 	(fp_text user "${REFERENCE}"
 		(at 1.5 -8 0)

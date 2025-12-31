@@ -16,19 +16,16 @@ Open browser to: `http://127.0.0.1:3939`
 
 ## 3. Usage
 ### Dependencies
-Make sure pcb_outline.svg exists by running:
+Make sure svg files required exist by running:
 ```sh
-kicad-cli pcb export svg --layers Edge.Cuts --exclude-drawing-sheet --drill-shape-opt 0 -o case/build/pcb_outline.svg pcb/pcb.kicad_pcb
+./case/src/export_assets.sh
 ```
 
-Ensure this is in the python source code:
+### Run
+Run the following command to update the viewer and export the build files:
+```sh
+python case/src/top_plate.py [-h] [--side [{left,right}]] [--thickness THICKNESS] [--extras | --no-extras] [--show | --no-show]
 
-```python
-from build123d import *
-from ocp_vscode import show
-
-# At the end of the file, where model is the model that was defined
-show(model)
 ```
 
 ## 4. Commands
