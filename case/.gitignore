@@ -1,17 +1,17 @@
-build/
+# Python Basics
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+env/
+venv/
 
-# OpenSCAD autosave/backup files
-*.scad~                   
-*~                          
-.#*                        
-
-# OpenSCAD geometry exports
-*.csg
-*.off
-*.dxf_export
+# Build123d / CAD Exports
+*.stl
+*.step
+*.stp
+*.3mf
+*.brep
+*.svg
 *.dxf
-*.png
-
-# Ignore OpenSCAD pickle caches
-.cache/
-.scad-cache/
+build/
