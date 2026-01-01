@@ -32,7 +32,7 @@ def main():
     # Build top plate shape
     pcb_wires = import_svg("case/build/pcb_outline.svg")
     mounting_hole_wires = import_svg("case/build/mounting_holes.svg")
-    switch_hole_wires = import_svg("case/build/switch_holes.svg")
+    switch_hole_wires = Wire.combine(import_svg("case/build/switch_holes.svg"))
 
     pcb_face = make_face(pcb_wires)
     mounting_hole_faces = [make_face(w) for w in mounting_hole_wires]
@@ -80,4 +80,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
