@@ -41,8 +41,14 @@ def main():
     with BuildPart() as base:
         add(pcb_face)
         extrude(amount=args.thickness)
-        add(mounting_hole_faces)
+
+        with BuildSketch(Plane.XY) as mounting_holes:
+            # Use bounding box centers of the original faces for accurate alignment
+            locs = [f.bounding_box().center() for f in mounting_hole_faces]
+            with Locations(locs):
+                Circle(radius=1.1)
         extrude(amount=args.thickness, mode=Mode.SUBTRACT)
+
         add(switch_hole_faces)
         extrude(amount=args.thickness, mode=Mode.SUBTRACT)
 
@@ -74,3 +80,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
