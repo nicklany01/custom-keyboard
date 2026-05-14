@@ -35,14 +35,16 @@
               RC(3,1) RC(3,2) RC(3,3) RC(3,4)  RC(3,5) RC(3,6) RC(3,7) RC(3,8)
     >;
   };
-  
+
+  vcc_pins: ext_power {
+		compatible = "zmk,ext-power-generic";
+		control-gpios = <&gpio0 31 GPIO_ACTIVE_HIGH>;
+		init-delay-ms = <50>;
+	};
+
   custom_gpios {
     compatible = "gpio-leds";
     status = "okay";
-    
-    led_power: led_power {
-      gpios = <&gpio0 31 GPIO_ACTIVE_HIGH>;
-    };
   };
   
   left_encoder: encoder_left {
@@ -148,10 +150,11 @@ nice_view_spi: &spi0 {
 };
 
 &gpio0 {
-  led_power_en: led_power_en {
-    gpio-hog;
-    gpios = <31 GPIO_ACTIVE_HIGH>; /* P0.31 / D21 */
-    output-high;
-    line-name = "led_power_en";
-  };
+	/* DO NOT REMOVE: Keeps internal mosfet connecting vdd to vcc on */
+	internal_vcc_hog {
+		gpio-hog;
+		gpios = <13 GPIO_ACTIVE_HIGH>;
+		output-high;
+		line-name = "internal_vcc_hog";
+	};
 };
