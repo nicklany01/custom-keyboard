@@ -9,9 +9,9 @@ TENTING_ANGLE = 25
 BASE_Z = -28
 WALL_THICKNESS = 2
 WALL_HEIGHT = 12
-
 PLATFORM_THICKNESS = 2
 
+# Pillars
 PILLAR_BASE_HEIGHT = 2
 PILLAR_BASE_OFFSET = 0
 PILLAR_TOP_OFFSET = 0
@@ -23,10 +23,15 @@ ABS_PILLAR_BASE_TOP_Z = PLATFORM_THICKNESS + PILLAR_BASE_HEIGHT
 ABS_PILLAR_TOTAL_TOP_Z = ABS_PILLAR_BASE_TOP_Z + PILLAR_TOP_HEIGHT
 
 # Battery Cutout
-CUTOUT_W = 60
-CUTOUT_H = 10
-CUTOUT_D = 70
-CUTOUT_Y = 138
+BATTERY_W = 60
+BATTERY_H = 10
+BATTERY_D = 70
+BATTERY_Y_OFFSET = 42
+
+# Wiring Cutout
+WIRING_W = 35
+WIRING_H = 12
+WIRING_D = 20
 
 VIS_COLOR = Color(1.0, 0.0, 0.0, alpha=0.3)
 
@@ -38,27 +43,27 @@ def main():
     parser.add_argument("--vis", action=argparse.BooleanOptionalAction, default=False)
     args = parser.parse_args()
 
-    p_wires = import_svg("case/build/pcb_outline.svg")
+    # Asset Imports
+    pcb_wires = import_svg("case/build/pcb_outline.svg")
     hole_wires = import_svg("case/build/mounting_holes.svg")
 
     hole_wires.sort(key=lambda w: w.center().X)
     hole_wires = hole_wires[:6]
 
-    p_face = make_face(p_wires)
+    pcb_face = make_face(pcb_wires)
     hole_faces = [make_face(w) for w in hole_wires]
-    hole_locs = [f.bounding_box().center() for f in hole_faces]
 
     with BuildPart() as base:
-        cx = p_face.bounding_box().center().X
-        tilt_loc = Pos(cx, 0, BASE_Z) * Rot(TILT_ANGLE, TENTING_ANGLE, 0)
-
         # Outer Shell
         with BuildPart(mode=Mode.PRIVATE) as outer_tray:
             with BuildSketch(Plane.XY.offset(PLATFORM_THICKNESS + WALL_HEIGHT)):
-                add(p_face)
+                add(pcb_face)
                 offset(amount=WALL_THICKNESS)
             extrude(amount=-100)
-            with Locations(tilt_loc):
+            with Locations(
+                Pos(pcb_face.bounding_box().center().X, 0, BASE_Z)
+                * Rot(TILT_ANGLE, TENTING_ANGLE, 0)
+            ):
                 Box(
                     1000,
                     1000,
@@ -68,16 +73,16 @@ def main():
                 )
         add(outer_tray.part)
 
-        # Inner Void Cutout (Modified to stop at the top platform layer)
+        # Inner Void Cutout
         with BuildPart(mode=Mode.PRIVATE) as inner_void:
             with BuildSketch(Plane.XY.offset(PLATFORM_THICKNESS + WALL_HEIGHT)):
-                add(p_face)
+                add(pcb_face)
             extrude(amount=-WALL_HEIGHT)
         add(inner_void.part, mode=Mode.SUBTRACT)
 
-        # Internal platform
+        # Internal Platform
         with BuildSketch(Plane.XY):
-            add(p_face)
+            add(pcb_face)
         extrude(amount=PLATFORM_THICKNESS)
 
         # Pillars
@@ -91,23 +96,45 @@ def main():
         extrude(amount=-PILLAR_TOP_HEIGHT)
 
         with BuildSketch(Plane.XY.offset(ABS_PILLAR_TOTAL_TOP_Z)):
-            with Locations(hole_locs):
+            with Locations([f.bounding_box().center() for f in hole_faces]):
                 Circle(radius=HOLE_RAD)
         extrude(amount=-(PILLAR_TOP_HEIGHT + PILLAR_BASE_HEIGHT), mode=Mode.SUBTRACT)
 
-        cutout_loc = Pos(base.part.bounding_box().max.X, CUTOUT_Y, 0) * Rot(0, 0, 90)
-        cutout_align = (Align.CENTER, Align.MIN, Align.MAX)
+        right_wall_x = base.part.bounding_box().max.X
+        top_wall_y = base.part.bounding_box().max.Y
 
-        with Locations(cutout_loc):
-            Box(CUTOUT_W, CUTOUT_D, CUTOUT_H, align=cutout_align, mode=Mode.SUBTRACT)
+        # Battery Cutout
+        with BuildPart(mode=Mode.PRIVATE) as battery_tool:
+            with Locations(Pos(right_wall_x, top_wall_y - BATTERY_Y_OFFSET, 0)):
+                Box(
+                    BATTERY_D,
+                    BATTERY_W,
+                    BATTERY_H,
+                    align=(Align.MAX, Align.CENTER, Align.MAX),
+                )
+        add(battery_tool.part, mode=Mode.SUBTRACT)
 
-    # Master Visualizations Container
+        # Wiring Cutout
+        with BuildPart(mode=Mode.PRIVATE) as wiring_tool:
+            with BuildSketch(Plane.XY.offset(PLATFORM_THICKNESS)):
+                add(pcb_face)
+            extrude(amount=-100)
+            with Locations(Pos(right_wall_x, top_wall_y, PLATFORM_THICKNESS)):
+                Box(
+                    WIRING_D,
+                    WIRING_W,
+                    WIRING_H,
+                    align=(Align.MAX, Align.MAX, Align.MAX),
+                    mode=Mode.INTERSECT,
+                )
+        add(wiring_tool.part, mode=Mode.SUBTRACT)
+
+    # Visualizations
     visualisations_part = None
     if args.vis:
         with BuildPart() as vis_builder:
-            # Cutout Guide
-            with Locations(cutout_loc):
-                Box(CUTOUT_W, CUTOUT_D, CUTOUT_H, align=cutout_align)
+            add(battery_tool.part)
+            add(wiring_tool.part)
 
         visualisations_part = vis_builder.part
         visualisations_part.color = VIS_COLOR
