@@ -33,6 +33,9 @@ WIRING_W = 35
 WIRING_H = 12
 WIRING_D = 20
 
+FILLET_RAD = 1
+CHAMFER_LEN = 1
+
 VIS_COLOR = Color(1.0, 0.0, 0.0, alpha=0.3)
 
 
@@ -72,6 +75,12 @@ def main():
                     mode=Mode.INTERSECT,
                 )
         add(outer_tray.part)
+
+        # Wall Fillet
+        # fillet(base.faces().sort_by(Axis.Z)[-1].edges(), radius=FILLET_RAD)
+
+        # Wall Chamfer
+        chamfer(base.faces().sort_by(Axis.Z)[-1].edges(), length=CHAMFER_LEN)
 
         # Inner Void Cutout
         with BuildPart(mode=Mode.PRIVATE) as inner_void:
