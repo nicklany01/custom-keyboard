@@ -2,27 +2,32 @@ import argparse
 from build123d import *
 from ocp_vscode import show
 
-TILT_ANGLE = 10
-TILT_Z = -14
+# Ergonomic Angles
+TILT_ANGLE = 0
+TENTING_ANGLE = 25
+BASE_Z = -32
 FLOOR_THICKNESS = 2
 
 WALL_THICKNESS = 2
-WALL_HEIGHT = 10
+WALL_HEIGHT = 12
 
 PLATFORM_Z = -4
 PLATFORM_THICKNESS = 2
 
 PILLAR_BASE_HEIGHT = 2
-PILLAR_BASE_OFFSET = 2
-PILLAR_TOP_HEIGHT = 4
-PILLAR_TOP_OFFSET = 0.5
+PILLAR_BASE_OFFSET = 0
+PILLAR_TOP_OFFSET = 0
+PILLAR_TOP_HEIGHT = 3
 HOLE_RAD = 0.8
-HOLE_DEPTH = 4
 
-CUTOUT_W = 55
-CUTOUT_H = 15
-CUTOUT_D = 10.0
-CUTOUT_LOC = Pos(140, 110, PLATFORM_Z) * Rot(0, 0, 90)
+# Derived Constants
+ABS_PILLAR_BASE_TOP_Z = PLATFORM_Z + PLATFORM_THICKNESS + PILLAR_BASE_HEIGHT
+ABS_PILLAR_TOTAL_TOP_Z = ABS_PILLAR_BASE_TOP_Z + PILLAR_TOP_HEIGHT
+
+CUTOUT_W = 60
+CUTOUT_H = 10
+CUTOUT_D = 10
+CUTOUT_LOC = Pos(140, 108, PLATFORM_Z) * Rot(0, 0, 90)
 CUTOUT_ALIGN = (Align.MIN, Align.CENTER, Align.MAX)
 
 VIS_COLOR = Color(1.0, 0.0, 0.0, alpha=0.3)
@@ -45,52 +50,75 @@ def main():
     hole_locs = [f.bounding_box().center() for f in hole_faces]
 
     with BuildPart() as base:
-        # Tilt logic
         cx = pcb_face.bounding_box().center().X
-        tilt_loc = Pos(cx, 0, TILT_Z) * Rot(0, TILT_ANGLE, 0)
+        tilt_loc = Pos(cx, 0, BASE_Z) * Rot(TILT_ANGLE, TENTING_ANGLE, 0)
 
-        with BuildPart(mode=Mode.PRIVATE) as target_builder:
+        # Outer Shell
+        with BuildPart(mode=Mode.PRIVATE) as outer_tray:
+            with BuildSketch(
+                Plane.XY.offset(PLATFORM_Z + PLATFORM_THICKNESS + WALL_HEIGHT)
+            ):
+                add(pcb_face)
+                offset(amount=WALL_THICKNESS)
+            extrude(amount=-100)
             with Locations(tilt_loc):
-                Box(1000, 1000, 1000, align=(Align.CENTER, Align.CENTER, Align.MAX))
-        floor_target = target_builder.part
+                Box(
+                    1000,
+                    1000,
+                    1000,
+                    align=(Align.CENTER, Align.CENTER, Align.MIN),
+                    mode=Mode.INTERSECT,
+                )
+        add(outer_tray.part)
 
-        with BuildPart(mode=Mode.PRIVATE) as limit_builder:
+        # Inner Void Cutout
+        with BuildPart(mode=Mode.PRIVATE) as inner_void:
+            with BuildSketch(
+                Plane.XY.offset(PLATFORM_Z + PLATFORM_THICKNESS + WALL_HEIGHT)
+            ):
+                add(pcb_face)
+            extrude(amount=-100)
             with Locations(tilt_loc * Pos(0, 0, FLOOR_THICKNESS)):
-                Box(1000, 1000, 1000, align=(Align.CENTER, Align.CENTER, Align.MAX))
-        hollow_limit = limit_builder.part
-
-        # Shell and tray
-        with BuildSketch(Plane.XY.offset(WALL_HEIGHT)):
-            add(pcb_face)
-            offset(amount=WALL_THICKNESS)
-        extrude(dir=(0, 0, -1), until=Until.NEXT, target=floor_target)
-
-        with BuildSketch(Plane.XY.offset(WALL_HEIGHT)):
-            add(pcb_face)
-        extrude(
-            dir=(0, 0, -1), until=Until.NEXT, target=hollow_limit, mode=Mode.SUBTRACT
-        )
+                Box(
+                    1000,
+                    1000,
+                    1000,
+                    align=(Align.CENTER, Align.CENTER, Align.MIN),
+                    mode=Mode.INTERSECT,
+                )
+        add(inner_void.part, mode=Mode.SUBTRACT)
 
         # Internal platform
         with BuildSketch(Plane.XY.offset(PLATFORM_Z)):
             add(pcb_face)
         extrude(amount=PLATFORM_THICKNESS)
 
+        # Battery resting platform
+        with BuildPart(mode=Mode.PRIVATE) as lower_platform:
+            with Locations(CUTOUT_LOC * Pos(0, 0, -CUTOUT_H)):
+                Box(
+                    CUTOUT_W,
+                    1000,
+                    PLATFORM_THICKNESS,
+                    align=(Align.MIN, Align.CENTER, Align.MAX),
+                )
+            add(inner_void.part, mode=Mode.INTERSECT)
+        add(lower_platform.part)
+
         # Pillars
-        with BuildSketch(Plane.XY.offset(PILLAR_BASE_HEIGHT)):
+        with BuildSketch(Plane.XY.offset(ABS_PILLAR_BASE_TOP_Z)):
             add(hole_faces)
-            offset(amount=PILLAR_BASE_OFFSET)
-        extrude(amount=-(PILLAR_BASE_HEIGHT - (PLATFORM_Z + PLATFORM_THICKNESS)))
+            offset(amount=PILLAR_TOP_OFFSET + PILLAR_BASE_OFFSET)
+        extrude(amount=-PILLAR_BASE_HEIGHT)
 
-        with BuildSketch(Plane.XY.offset(PILLAR_TOP_HEIGHT)):
+        with BuildSketch(Plane.XY.offset(ABS_PILLAR_TOTAL_TOP_Z)):
             add(hole_faces)
-            offset(amount=PILLAR_TOP_OFFSET)
-        extrude(amount=-(PILLAR_TOP_HEIGHT - PILLAR_BASE_HEIGHT))
+        extrude(amount=-PILLAR_TOP_HEIGHT)
 
-        with BuildSketch(Plane.XY.offset(PILLAR_TOP_HEIGHT)):
+        with BuildSketch(Plane.XY.offset(ABS_PILLAR_TOTAL_TOP_Z)):
             with Locations(hole_locs):
                 Circle(radius=HOLE_RAD)
-        extrude(amount=-HOLE_DEPTH, mode=Mode.SUBTRACT)
+        extrude(amount=-(PILLAR_TOP_HEIGHT + PILLAR_BASE_HEIGHT), mode=Mode.SUBTRACT)
 
         # Wall cutout
         with Locations(CUTOUT_LOC):
