@@ -8,7 +8,7 @@ TENTING_ANGLE = 25
 
 BASE_Z = -28
 WALL_THICKNESS = 2
-WALL_HEIGHT = 12
+WALL_HEIGHT = 12.3
 PLATFORM_THICKNESS = 2
 
 # Pillars
@@ -17,6 +17,7 @@ PILLAR_BASE_OFFSET = 0
 PILLAR_TOP_OFFSET = 0
 PILLAR_TOP_HEIGHT = 3
 HOLE_RAD = 0.8  # M2 Screws
+PCB_CLEARANCE = 0.25
 
 # Derived Constants
 ABS_PILLAR_BASE_TOP_Z = PLATFORM_THICKNESS + PILLAR_BASE_HEIGHT
@@ -26,12 +27,29 @@ ABS_PILLAR_TOTAL_TOP_Z = ABS_PILLAR_BASE_TOP_Z + PILLAR_TOP_HEIGHT
 BATTERY_W = 60
 BATTERY_H = 10
 BATTERY_D = 70
-BATTERY_Y_OFFSET = 42
+BATTERY_Y_OFFSET = 42 + PCB_CLEARANCE
+BATTERY_FILLET = 1
 
 # Wiring Cutout
 WIRING_W = 35
 WIRING_H = 12
-WIRING_D = 20
+WIRING_D = 18
+
+# Switch Cutout
+SWITCH_CUTOUT_Y_OFFSET = 40 + PCB_CLEARANCE
+SWITCH_CUTOUT_W = 10
+SWITCH_CUTOUT_H = 6
+SWITCH_CUTOUT_D = WALL_THICKNESS + 1
+SWITCH_CUTOUT_FILLET = 1
+
+# Charging Cutout
+CHARGING_CUTOUT_X_OFFSET = 8.8 + PCB_CLEARANCE
+CHARGING_CUTOUT_Y_OFFSET = 3.8
+CHARGING_CUTOUT_Z_OFFSET = 6.35
+CHARGING_CUTOUT_W = 12.0
+CHARGING_CUTOUT_H = 6.0
+CHARGING_CUTOUT_D = WALL_THICKNESS + 1
+CHARGING_CUTOUT_FILLET = 1
 
 FILLET_RAD = 1
 CHAMFER_LEN = 1
@@ -53,8 +71,12 @@ def main():
     hole_wires.sort(key=lambda w: w.center().X)
     hole_wires = hole_wires[:6]
 
-    pcb_face = make_face(pcb_wires)
-    hole_faces = [make_face(w) for w in hole_wires]
+    with BuildSketch() as pcb_sketch:
+        add(make_face(pcb_wires))
+        offset(amount=PCB_CLEARANCE)
+    pcb_face = pcb_sketch.sketch
+
+    blocks = [make_face(w) for w in hole_wires]
 
     with BuildPart() as base:
         # Outer Shell
@@ -76,9 +98,6 @@ def main():
                 )
         add(outer_tray.part)
 
-        # Wall Fillet
-        # fillet(base.faces().sort_by(Axis.Z)[-1].edges(), radius=FILLET_RAD)
-
         # Wall Chamfer
         chamfer(base.faces().sort_by(Axis.Z)[-1].edges(), length=CHAMFER_LEN)
 
@@ -96,16 +115,16 @@ def main():
 
         # Pillars
         with BuildSketch(Plane.XY.offset(ABS_PILLAR_BASE_TOP_Z)):
-            add(hole_faces)
+            add(blocks)
             offset(amount=PILLAR_TOP_OFFSET + PILLAR_BASE_OFFSET)
         extrude(amount=-PILLAR_BASE_HEIGHT)
 
         with BuildSketch(Plane.XY.offset(ABS_PILLAR_TOTAL_TOP_Z)):
-            add(hole_faces)
+            add(blocks)
         extrude(amount=-PILLAR_TOP_HEIGHT)
 
         with BuildSketch(Plane.XY.offset(ABS_PILLAR_TOTAL_TOP_Z)):
-            with Locations([f.bounding_box().center() for f in hole_faces]):
+            with Locations([f.bounding_box().center() for f in blocks]):
                 Circle(radius=HOLE_RAD)
         extrude(amount=-(PILLAR_TOP_HEIGHT + PILLAR_BASE_HEIGHT), mode=Mode.SUBTRACT)
 
@@ -121,6 +140,7 @@ def main():
                     BATTERY_H,
                     align=(Align.MAX, Align.CENTER, Align.MAX),
                 )
+                fillet(battery_tool.edges().filter_by(Axis.X), radius=BATTERY_FILLET)
         add(battery_tool.part, mode=Mode.SUBTRACT)
 
         # Wiring Cutout
@@ -128,7 +148,9 @@ def main():
             with BuildSketch(Plane.XY.offset(PLATFORM_THICKNESS)):
                 add(pcb_face)
             extrude(amount=-100)
-            with Locations(Pos(right_wall_x, top_wall_y, PLATFORM_THICKNESS)):
+            with Locations(
+                Pos(right_wall_x - WALL_THICKNESS, top_wall_y, PLATFORM_THICKNESS)
+            ):
                 Box(
                     WIRING_D,
                     WIRING_W,
@@ -138,12 +160,51 @@ def main():
                 )
         add(wiring_tool.part, mode=Mode.SUBTRACT)
 
+        # Switch Cutout
+        with BuildPart(mode=Mode.PRIVATE) as switch_cutout_tool:
+            switch_y = top_wall_y - (
+                SWITCH_CUTOUT_Y_OFFSET + WALL_THICKNESS + CHARGING_CUTOUT_Y_OFFSET
+            )
+            with Locations(Pos(right_wall_x, switch_y, PLATFORM_THICKNESS)):
+                Box(
+                    SWITCH_CUTOUT_D,
+                    SWITCH_CUTOUT_W,
+                    SWITCH_CUTOUT_H,
+                    align=(Align.MAX, Align.CENTER, Align.MIN),
+                )
+                fillet(
+                    switch_cutout_tool.edges().filter_by(Axis.X),
+                    radius=SWITCH_CUTOUT_FILLET,
+                )
+        add(switch_cutout_tool.part, mode=Mode.SUBTRACT)
+
+        # Charging Cutout
+        with BuildPart(mode=Mode.PRIVATE) as charging_cutout_tool:
+            charging_x = right_wall_x - (CHARGING_CUTOUT_X_OFFSET + WALL_THICKNESS)
+            charging_z = PLATFORM_THICKNESS + CHARGING_CUTOUT_Z_OFFSET
+            with Locations(
+                Pos(charging_x, top_wall_y - CHARGING_CUTOUT_Y_OFFSET, charging_z)
+            ):
+                Box(
+                    CHARGING_CUTOUT_W,
+                    CHARGING_CUTOUT_D,
+                    CHARGING_CUTOUT_H,
+                    align=(Align.CENTER, Align.MAX, Align.CENTER),
+                )
+                fillet(
+                    charging_cutout_tool.edges().filter_by(Axis.Y),
+                    radius=CHARGING_CUTOUT_FILLET,
+                )
+        add(charging_cutout_tool.part, mode=Mode.SUBTRACT)
+
     # Visualizations
     visualisations_part = None
     if args.vis:
         with BuildPart() as vis_builder:
             add(battery_tool.part)
             add(wiring_tool.part)
+            add(switch_cutout_tool.part)
+            add(charging_cutout_tool.part)
 
         visualisations_part = vis_builder.part
         visualisations_part.color = VIS_COLOR
