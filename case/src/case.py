@@ -30,6 +30,8 @@ BATTERY_D = 70
 BATTERY_Y_OFFSET = 42 + PCB_CLEARANCE
 BATTERY_FILLET = 1
 
+LOGO_SCALE = 1.0
+
 # Wiring Cutout
 WIRING_W = 35
 WIRING_H = 12
@@ -54,7 +56,10 @@ CHARGING_CUTOUT_FILLET = 1
 FILLET_RAD = 1
 CHAMFER_LEN = 1
 
+# Viewer Colors
 VIS_COLOR = Color(1.0, 0.0, 0.0, alpha=0.3)
+CASE_COLOR = Color(0.15, 0.15, 0.15)
+INLAY_COLOR = Color(0.0, 0.3, 0.1)
 
 
 def main():
@@ -64,9 +69,12 @@ def main():
     parser.add_argument("--vis", action=argparse.BooleanOptionalAction, default=False)
     args = parser.parse_args()
 
-    # Asset Imports
     pcb_wires = import_svg("case/build/pcb_outline.svg")
     hole_wires = import_svg("case/build/mounting_holes.svg")
+    logo_wires = import_svg("assets/logo.svg")
+
+    inlay_part = None
+    visualizations_part = None
 
     hole_wires.sort(key=lambda w: w.center().X)
     hole_wires = hole_wires[:6]
@@ -97,8 +105,6 @@ def main():
                     mode=Mode.INTERSECT,
                 )
         add(outer_tray.part)
-
-        # Wall Chamfer
         chamfer(base.faces().sort_by(Axis.Z)[-1].edges(), length=CHAMFER_LEN)
 
         # Inner Void Cutout
@@ -197,39 +203,90 @@ def main():
                 )
         add(charging_cutout_tool.part, mode=Mode.SUBTRACT)
 
+        # Logo Cutout
+        with BuildSketch() as logo_sketch:
+            for w in logo_wires:
+                try:
+                    add(make_face(w))
+                except Exception:
+                    pass
+
+        if logo_sketch.sketch:
+            battery_bbox = battery_tool.part.bounding_box()
+            case_bbox = base.part.bounding_box()
+
+            target_width_y = battery_bbox.size.Y
+            target_center_y = battery_bbox.center().Y
+            target_center_z = (battery_bbox.min.Z + case_bbox.min.Z) / 2
+
+            logo_bbox = logo_sketch.sketch.bounding_box()
+            initial_logo_width = logo_bbox.size.X
+
+            if initial_logo_width > 0:
+                logo = logo_sketch.sketch.translate(
+                    (-logo_bbox.center().X, -logo_bbox.center().Y, 0)
+                )
+                logo = logo.scale((target_width_y / initial_logo_width) * LOGO_SCALE)
+
+                if args.side == "right":
+                    logo = mirror(logo, Plane.YZ)
+
+                with BuildPart(mode=Mode.PRIVATE) as logo_builder:
+                    with BuildSketch(Plane.YZ.offset(right_wall_x)):
+                        with Locations(Pos(target_center_y, target_center_z)):
+                            add(logo)
+                    extrude(amount=-WALL_THICKNESS)
+
+                add(logo_builder.part, mode=Mode.SUBTRACT)
+                inlay_part = logo_builder.part
+
     # Visualizations
-    visualisations_part = None
     if args.vis:
         with BuildPart() as vis_builder:
             add(battery_tool.part)
             add(wiring_tool.part)
             add(switch_cutout_tool.part)
             add(charging_cutout_tool.part)
+        visualizations_part = vis_builder.part
 
-        visualisations_part = vis_builder.part
-        visualisations_part.color = VIS_COLOR
-
+    # Side Mirroring
     part = base.part
     if args.side == "right":
         part = mirror(part, Plane.YZ)
-        if visualisations_part is not None:
-            visualisations_part = mirror(visualisations_part, Plane.YZ)
-            visualisations_part.color = VIS_COLOR
+        if inlay_part is not None:
+            inlay_part = mirror(inlay_part, Plane.YZ)
+        if visualizations_part is not None:
+            visualizations_part = mirror(visualizations_part, Plane.YZ)
 
     with BuildPart() as final_case:
         add(part)
 
     if args.show:
+        final_case.part.color = CASE_COLOR
         show_parts = [final_case.part]
         show_names = ["Case"]
 
-        if visualisations_part is not None:
-            show_parts.append(visualisations_part)
+        if inlay_part is not None:
+            inlay_part.color = INLAY_COLOR
+            show_parts.append(inlay_part)
+            show_names.append("Inlay Features")
+
+        if visualizations_part is not None:
+            visualizations_part.color = VIS_COLOR
+            show_parts.append(visualizations_part)
             show_names.append("Visualizations")
 
         show(*show_parts, names=show_names)
 
-    export_stl(final_case.part, f"case/build/case_{args.side}.stl")
+    # Multi-Material Export
+    output_solids = [final_case.part]
+    if inlay_part is not None:
+        output_solids.append(inlay_part)
+    export_step(Compound(output_solids), f"case/build/case_{args.side}.step")
+
+    export_stl(final_case.part, f"case/build/case_{args.side}_main.stl")
+    if inlay_part is not None:
+        export_stl(inlay_part, f"case/build/case_{args.side}_inlay.stl")
 
 
 if __name__ == "__main__":
