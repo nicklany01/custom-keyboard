@@ -1,4 +1,5 @@
 import argparse
+import math
 from build123d import *
 from ocp_vscode import show
 
@@ -30,7 +31,16 @@ BATTERY_D = 70
 BATTERY_Y_OFFSET = 42 + PCB_CLEARANCE
 BATTERY_FILLET = 1
 
-LOGO_SCALE = 1.0
+LOGO_SCALE = 1.1
+
+# Front Text Configuration
+TEXT_STR = "Created by Nick Lany"
+TEXT_FONT_SIZE = 6
+TEXT_FONT = "Arial"
+TEXT_FONT_STYLE = FontStyle.BOLD
+TEXT_LEFT_X = 10
+TEXT_BOTTOM_Z = 1
+TEXT_EXTRUDE_DEPTH = 50
 
 # Wiring Cutout
 WIRING_W = 35
@@ -73,7 +83,7 @@ def main():
     hole_wires = import_svg("case/build/mounting_holes.svg")
     logo_wires = import_svg("assets/logo.svg")
 
-    inlay_part = None
+    inlay_pieces = []
     visualizations_part = None
 
     hole_wires.sort(key=lambda w: w.center().X)
@@ -134,12 +144,12 @@ def main():
                 Circle(radius=HOLE_RAD)
         extrude(amount=-(PILLAR_TOP_HEIGHT + PILLAR_BASE_HEIGHT), mode=Mode.SUBTRACT)
 
-        right_wall_x = base.part.bounding_box().max.X
-        top_wall_y = base.part.bounding_box().max.Y
+        # Unified Bounding Box Context for All Cutouts
+        case_bbox = base.part.bounding_box()
 
         # Battery Cutout
         with BuildPart(mode=Mode.PRIVATE) as battery_tool:
-            with Locations(Pos(right_wall_x, top_wall_y - BATTERY_Y_OFFSET, 0)):
+            with Locations(Pos(case_bbox.max.X, case_bbox.max.Y - BATTERY_Y_OFFSET, 0)):
                 Box(
                     BATTERY_D,
                     BATTERY_W,
@@ -155,7 +165,11 @@ def main():
                 add(pcb_face)
             extrude(amount=-100)
             with Locations(
-                Pos(right_wall_x - WALL_THICKNESS, top_wall_y, PLATFORM_THICKNESS)
+                Pos(
+                    case_bbox.max.X - WALL_THICKNESS,
+                    case_bbox.max.Y,
+                    PLATFORM_THICKNESS,
+                )
             ):
                 Box(
                     WIRING_D,
@@ -168,10 +182,10 @@ def main():
 
         # Switch Cutout
         with BuildPart(mode=Mode.PRIVATE) as switch_cutout_tool:
-            switch_y = top_wall_y - (
+            switch_y = case_bbox.max.Y - (
                 SWITCH_CUTOUT_Y_OFFSET + WALL_THICKNESS + CHARGING_CUTOUT_Y_OFFSET
             )
-            with Locations(Pos(right_wall_x, switch_y, PLATFORM_THICKNESS)):
+            with Locations(Pos(case_bbox.max.X, switch_y, PLATFORM_THICKNESS)):
                 Box(
                     SWITCH_CUTOUT_D,
                     SWITCH_CUTOUT_W,
@@ -186,10 +200,10 @@ def main():
 
         # Charging Cutout
         with BuildPart(mode=Mode.PRIVATE) as charging_cutout_tool:
-            charging_x = right_wall_x - (CHARGING_CUTOUT_X_OFFSET + WALL_THICKNESS)
+            charging_x = case_bbox.max.X - (CHARGING_CUTOUT_X_OFFSET + WALL_THICKNESS)
             charging_z = PLATFORM_THICKNESS + CHARGING_CUTOUT_Z_OFFSET
             with Locations(
-                Pos(charging_x, top_wall_y - CHARGING_CUTOUT_Y_OFFSET, charging_z)
+                Pos(charging_x, case_bbox.max.Y - CHARGING_CUTOUT_Y_OFFSET, charging_z)
             ):
                 Box(
                     CHARGING_CUTOUT_W,
@@ -204,7 +218,7 @@ def main():
         add(charging_cutout_tool.part, mode=Mode.SUBTRACT)
 
         # Logo Cutout
-        with BuildSketch() as logo_sketch:
+        with BuildSketch(mode=Mode.PRIVATE) as logo_sketch:
             for w in logo_wires:
                 try:
                     add(make_face(w))
@@ -213,12 +227,9 @@ def main():
 
         if logo_sketch.sketch:
             battery_bbox = battery_tool.part.bounding_box()
-            case_bbox = base.part.bounding_box()
-
             target_width_y = battery_bbox.size.Y
             target_center_y = battery_bbox.center().Y
             target_center_z = (battery_bbox.min.Z + case_bbox.min.Z) / 2
-
             logo_bbox = logo_sketch.sketch.bounding_box()
             initial_logo_width = logo_bbox.size.X
 
@@ -232,13 +243,47 @@ def main():
                     logo = mirror(logo, Plane.YZ)
 
                 with BuildPart(mode=Mode.PRIVATE) as logo_builder:
-                    with BuildSketch(Plane.YZ.offset(right_wall_x)):
+                    with BuildSketch(Plane.YZ.offset(case_bbox.max.X)):
                         with Locations(Pos(target_center_y, target_center_z)):
                             add(logo)
                     extrude(amount=-WALL_THICKNESS)
 
                 add(logo_builder.part, mode=Mode.SUBTRACT)
-                inlay_part = logo_builder.part
+                inlay_pieces.append(logo_builder.part)
+
+        # Front Wall Text Cutout & Inlay
+        front_plane = Plane(
+            origin=(case_bbox.center().X, case_bbox.min.Y, BASE_Z),
+            x_dir=(1, 0, 0),
+            z_dir=(0, -1, 0),
+        )
+        text_left_x = (case_bbox.min.X - case_bbox.center().X) / math.cos(
+            math.radians(TENTING_ANGLE)
+        ) + TEXT_LEFT_X
+
+        with BuildPart(mode=Mode.PRIVATE) as text_tool:
+            with BuildSketch(front_plane) as text_sketch:
+                with Locations(
+                    Rot(0, 0, -TENTING_ANGLE) * Pos(text_left_x, TEXT_BOTTOM_Z)
+                ):
+                    Text(
+                        TEXT_STR,
+                        font_size=TEXT_FONT_SIZE,
+                        font=TEXT_FONT,
+                        font_style=TEXT_FONT_STYLE,
+                        align=(Align.MIN, Align.MIN),
+                    )
+            extrude(text_sketch.sketch, amount=-TEXT_EXTRUDE_DEPTH)
+
+        with BuildPart(mode=Mode.PRIVATE) as text_inlay:
+            add(base.part)
+            add(text_tool.part, mode=Mode.INTERSECT)
+
+        add(text_tool.part, mode=Mode.SUBTRACT)
+        if text_inlay.part:
+            inlay_pieces.append(text_inlay.part)
+
+        inlay_part = Compound(inlay_pieces) if inlay_pieces else None
 
     # Visualizations
     if args.vis:
