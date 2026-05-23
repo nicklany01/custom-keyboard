@@ -34,11 +34,11 @@ BATTERY_FILLET = 1
 LOGO_SCALE = 1.1
 
 # Front Text Configuration
-TEXT_STR = "Created by Nick Lany"
+TEXT_STR = "By Nick Lany"
 TEXT_FONT_SIZE = 6
 TEXT_FONT = "Arial"
 TEXT_FONT_STYLE = FontStyle.BOLD
-TEXT_LEFT_X = 10
+TEXT_LEFT_X = 30
 TEXT_BOTTOM_Z = 1
 TEXT_EXTRUDE_DEPTH = 50
 
@@ -273,7 +273,25 @@ def main():
                         font_style=TEXT_FONT_STYLE,
                         align=(Align.MIN, Align.MIN),
                     )
-            extrude(text_sketch.sketch, amount=-TEXT_EXTRUDE_DEPTH)
+
+            if args.side == "right":
+                extrude(
+                    mirror(
+                        text_sketch.sketch,
+                        Plane(
+                            origin=text_sketch.sketch.bounding_box().center(),
+                            x_dir=(0, -1, 0),
+                            z_dir=Vector(
+                                math.cos(math.radians(-TENTING_ANGLE)),
+                                0,
+                                math.sin(math.radians(-TENTING_ANGLE)),
+                            ),
+                        ),
+                    ),
+                    amount=-TEXT_EXTRUDE_DEPTH,
+                )
+            else:
+                extrude(text_sketch.sketch, amount=-TEXT_EXTRUDE_DEPTH)
 
         with BuildPart(mode=Mode.PRIVATE) as text_inlay:
             add(base.part)
