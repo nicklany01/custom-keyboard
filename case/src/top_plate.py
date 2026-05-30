@@ -32,11 +32,11 @@ def main():
     # Build top plate shape
     pcb_wires = import_svg("case/build/pcb_outline.svg")
     mounting_hole_wires = import_svg("case/build/mounting_holes.svg")
-    switch_hole_wires = Wire.combine(import_svg("case/build/switch_holes.svg"))
+    plate_cutout_wires = Wire.combine(import_svg("case/build/plate_cutout.svg"))
 
     pcb_face = make_face(pcb_wires)
     mounting_hole_faces = [make_face(w) for w in mounting_hole_wires]
-    switch_hole_faces = [make_face(w) for w in switch_hole_wires]
+    plate_cutout_faces = [make_face(w) for w in plate_cutout_wires]
 
     with BuildPart() as base:
         add(pcb_face)
@@ -49,7 +49,7 @@ def main():
                 Circle(radius=1.1)
         extrude(amount=args.thickness, mode=Mode.SUBTRACT)
 
-        add(switch_hole_faces)
+        add(plate_cutout_faces)
         extrude(amount=args.thickness, mode=Mode.SUBTRACT)
 
     part = base.part

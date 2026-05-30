@@ -20,18 +20,18 @@
 		(3 "B.Mask" user)
 		(17 "Dwgs.User" user "User.Drawings")
 		(19 "Cmts.User" user "User.Comments")
-		(21 "Eco1.User" user "User.Eco1")
-		(23 "Eco2.User" user "User.Eco2")
 		(25 "Edge.Cuts" user)
 		(27 "Margin" user)
 		(31 "F.CrtYd" user "F.Courtyard")
 		(29 "B.CrtYd" user "B.Courtyard")
 		(35 "F.Fab" user)
 		(33 "B.Fab" user)
-		(39 "User.1" user)
-		(41 "User.2" user)
-		(43 "User.3" user)
-		(45 "User.4" user)
+		(39 "User.1" user "User.Mounting_Holes")
+		(41 "User.2" user "User.Plate_Cutout")
+		(43 "User.3" user "User.Extras_Left")
+		(45 "User.4" user "User.Extras_Right")
+		(47 "User.5" user "User.Top_Edge")
+		(49 "User.6" user "User.Top_Cutout")
 	)
 	(setup
 		(pad_to_mask_clearance 0)
@@ -45855,6 +45855,218 @@
 		(fill yes)
 		(layer "User.4")
 		(uuid "fdc21bb1-385c-4f78-b64f-6e907dabbac4")
+	)
+	(gr_arc
+		(start 153.25 29.889936)
+		(mid 153.68934 28.829276)
+		(end 154.75 28.389936)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(layer "User.5")
+		(uuid "1041069f-fa6e-4d42-b8a9-f9a95bbe6a94")
+	)
+	(gr_arc
+		(start 174.25 89.039936)
+		(mid 173.81066 90.100596)
+		(end 172.75 90.539936)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(layer "User.5")
+		(uuid "1ef7d777-0db2-4294-b508-f06458c96c2b")
+	)
+	(gr_line
+		(start 141.31 90.54)
+		(end 123.31 90.54)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(layer "User.5")
+		(uuid "53063647-bb59-4ae1-97a7-24319fe073d4")
+	)
+	(gr_line
+		(start 142.81 29.89)
+		(end 142.81 89.04)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(layer "User.5")
+		(uuid "60f1ac23-08e3-472c-8ece-6f5f6a83bbc5")
+	)
+	(gr_line
+		(start 172.75 28.389936)
+		(end 154.75 28.389936)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(layer "User.5")
+		(uuid "679bb63d-c64a-401a-8ccd-08aa1cd8bc63")
+	)
+	(gr_arc
+		(start 142.81 89.04)
+		(mid 142.37066 90.10066)
+		(end 141.31 90.54)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(layer "User.5")
+		(uuid "83dca838-0d7f-4f85-87be-78bdde734d2d")
+	)
+	(gr_arc
+		(start 154.75 90.539936)
+		(mid 153.68934 90.100596)
+		(end 153.25 89.039936)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(layer "User.5")
+		(uuid "92fa7809-828e-4a09-a4fa-c9eef8d4a328")
+	)
+	(gr_line
+		(start 153.25 29.889936)
+		(end 153.25 89.039936)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(layer "User.5")
+		(uuid "a72267d1-e539-462b-97e3-a944745ae890")
+	)
+	(gr_arc
+		(start 141.31 28.39)
+		(mid 142.37066 28.82934)
+		(end 142.81 29.89)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(layer "User.5")
+		(uuid "aec58f91-9772-46cd-857b-389b2d2326c0")
+	)
+	(gr_arc
+		(start 121.81 29.89)
+		(mid 122.24934 28.82934)
+		(end 123.31 28.39)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(layer "User.5")
+		(uuid "b1e3b122-179d-4367-8b9d-0c1d94f4d20b")
+	)
+	(gr_line
+		(start 174.25 89.039936)
+		(end 174.25 29.889936)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(layer "User.5")
+		(uuid "ba8db184-62e1-41be-872e-9a7a731278d7")
+	)
+	(gr_line
+		(start 121.81 89.04)
+		(end 121.81 29.89)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(layer "User.5")
+		(uuid "bb690c6e-c558-4f9c-ad90-2c7d0202cda8")
+	)
+	(gr_arc
+		(start 123.31 90.54)
+		(mid 122.24934 90.10066)
+		(end 121.81 89.04)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(layer "User.5")
+		(uuid "c57ec9df-92a5-4947-b262-8c928fc74eaa")
+	)
+	(gr_line
+		(start 123.31 28.39)
+		(end 141.31 28.39)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(layer "User.5")
+		(uuid "ceaeaf7e-c25e-4356-8a86-0ada68564a3c")
+	)
+	(gr_arc
+		(start 172.75 28.389936)
+		(mid 173.81066 28.829276)
+		(end 174.25 29.889936)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(layer "User.5")
+		(uuid "e3621955-2e07-4880-a796-a6712285247f")
+	)
+	(gr_line
+		(start 154.75 90.539936)
+		(end 172.75 90.539936)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(layer "User.5")
+		(uuid "fd32ef22-f110-4733-841d-ea8c37cabf16")
+	)
+	(gr_circle
+		(center 131.33 81.32)
+		(end 138.33 81.29)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(fill no)
+		(layer "User.6")
+		(uuid "a572b498-6dc1-4437-b7b8-2a5f77295f2e")
+	)
+	(gr_circle
+		(center 164.73 81.319936)
+		(end 157.73 81.289936)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(fill no)
+		(layer "User.6")
+		(uuid "af9bb098-531b-4e8d-b3de-52c045276831")
+	)
+	(gr_rect
+		(start 124.33 35.18)
+		(end 138.33 72.02)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(fill no)
+		(layer "User.6")
+		(uuid "c0f2efbf-d866-4c2d-9b80-891940ccfc82")
+	)
+	(gr_rect
+		(start 157.73 35.179936)
+		(end 171.73 72.019936)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(fill no)
+		(layer "User.6")
+		(uuid "fd6cd364-5719-41e1-add0-6d5edaa4cedb")
 	)
 	(gr_text "First Edition Original by Nick Lany"
 		(at 225.812047 111.277976 0)
@@ -108438,6 +108650,22 @@
 		)
 	)
 	(group ""
+		(uuid "ce31cf56-b7c8-4b8e-8e25-611bcfa3d004")
+		(members "016695bf-0d3f-4c4f-a4a8-95ace73fea10" "1239f186-292e-43ab-be46-06a84ecd218d"
+			"167a57cf-219f-4f36-ae6f-81d9d494b1e7" "7d923354-c7ad-4499-bc41-3bfa7d897e0c"
+			"954d9f21-1d6e-4610-93ff-f4a5af8eb870" "a2027fc8-3411-4183-8c86-0f15264fe4cc"
+			"bcc09d7f-5a85-4f32-9397-698a15552aa9" "d635017d-6aa2-4df2-91cf-a7836c51e82e"
+		)
+	)
+	(group ""
+		(uuid "ec0ea183-d3a5-446c-adca-04638b42158e")
+		(members "06ea300b-f8ba-4c4c-aeae-4c9c131e7c21" "1d69f8e3-9bc1-4921-b713-68ed2e20c410"
+			"21052743-7236-45cf-9ea3-bb60cdc8d676" "527df2d2-53bd-4f82-84bc-49e30ae88aa1"
+			"94ed2a3c-d741-470b-a9d7-120c2cc74b94" "bc98ce67-73dd-40bd-9d94-530820de5f5d"
+			"d55af19f-8156-4b85-a94d-7cf0394c5b2e" "e8a8512c-8e35-4815-8a25-b350c12d2ef6"
+		)
+	)
+	(group ""
 		(uuid "1929f63e-5135-4949-87a6-4a8f80526a6a")
 		(members "3929a743-16ba-4fc0-b07e-ab0229718335" "50c74d0d-15da-4fe7-b960-d7492f44c7b1"
 			"6e390a76-5302-4408-a9d2-b4a4a70677f1" "a19c61c1-7db0-4034-bfbd-f8b43f9211b1"
@@ -108449,6 +108677,22 @@
 		(members "2d215a3a-8226-4bec-9b05-e3d8e230051c" "4ecf14de-5825-4997-b92a-eb08b8674163"
 			"92c4e5d7-65a5-4dcf-8f08-1401912721f1" "c31b027e-c84b-43d5-a245-8006f6b074c4"
 			"c4006262-489e-419a-9d4a-58bcf19fd82b" "fdc21bb1-385c-4f78-b64f-6e907dabbac4"
+		)
+	)
+	(group ""
+		(uuid "0049ecac-d422-4d1b-b00f-b838fa4b25b5")
+		(members "1041069f-fa6e-4d42-b8a9-f9a95bbe6a94" "1ef7d777-0db2-4294-b508-f06458c96c2b"
+			"679bb63d-c64a-401a-8ccd-08aa1cd8bc63" "92fa7809-828e-4a09-a4fa-c9eef8d4a328"
+			"a72267d1-e539-462b-97e3-a944745ae890" "ba8db184-62e1-41be-872e-9a7a731278d7"
+			"e3621955-2e07-4880-a796-a6712285247f" "fd32ef22-f110-4733-841d-ea8c37cabf16"
+		)
+	)
+	(group ""
+		(uuid "718343bf-1dc6-4063-a549-8904537901a6")
+		(members "53063647-bb59-4ae1-97a7-24319fe073d4" "60f1ac23-08e3-472c-8ece-6f5f6a83bbc5"
+			"83dca838-0d7f-4f85-87be-78bdde734d2d" "aec58f91-9772-46cd-857b-389b2d2326c0"
+			"b1e3b122-179d-4367-8b9d-0c1d94f4d20b" "bb690c6e-c558-4f9c-ad90-2c7d0202cda8"
+			"c57ec9df-92a5-4947-b262-8c928fc74eaa" "ceaeaf7e-c25e-4356-8a86-0ada68564a3c"
 		)
 	)
 	(embedded_fonts no)
