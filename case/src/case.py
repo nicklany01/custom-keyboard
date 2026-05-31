@@ -3,16 +3,17 @@ import math
 from build123d import *
 from ocp_vscode import show
 
-# Ergonomic Angles
+# Ergonomic angles
 TILT_ANGLE = 0
 TENTING_ANGLE = 20
 
+# Case dimensions
 BASE_Z = -21
 WALL_THICKNESS = 2
 WALL_HEIGHT = 12.3
 PLATFORM_THICKNESS = 2
 
-# Raised Top Piece (screen bezel that sits above the wall)
+# Bezel settings
 TOP_PIECE_HEIGHT = 5.0
 
 # Pillars
@@ -20,25 +21,33 @@ PILLAR_BASE_HEIGHT = 2
 PILLAR_BASE_OFFSET = 0
 PILLAR_TOP_OFFSET = 0
 PILLAR_TOP_HEIGHT = 3
-HOLE_RAD = 0.8  # M2 Screws
+HOLE_RAD = 0.8
 PCB_CLEARANCE = 0.25
 
-# Derived Constants
+# Derived constants
 ABS_PILLAR_BASE_TOP_Z = PLATFORM_THICKNESS + PILLAR_BASE_HEIGHT
 ABS_PILLAR_TOTAL_TOP_Z = ABS_PILLAR_BASE_TOP_Z + PILLAR_TOP_HEIGHT
+TOP_PIECE_Z = PLATFORM_THICKNESS + WALL_HEIGHT
 
-# Battery Cutout
+# Battery cutout
 BATTERY_W = 60
 BATTERY_H = 10
 BATTERY_D = 70
 BATTERY_Y_OFFSET = 42 + PCB_CLEARANCE
 BATTERY_FILLET = 2
 
+# Battery cover configuration
+BATTERY_COVER_DEPTH = 5.0
+BATTERY_COVER_LIP_W = 1.5
+BATTERY_COVER_LIP_T = 1.5
+BATTERY_COVER_CLEARANCE = 0.2
+
+# Logo settings
 LOGO_SCALE = 0.8
 LOGO_DEPTH = 1.0
 TOP_OVERLAP = 2.0
 
-# Front Text Configuration
+# Front text configuration
 TEXT_STR = "By Nick Lany"
 TEXT_FONT_SIZE = 6
 TEXT_FONT = "Arial"
@@ -47,19 +56,19 @@ TEXT_LEFT_X = 40
 TEXT_BOTTOM_Z = 1
 TEXT_EXTRUDE_DEPTH = 16.5
 
-# Wiring Cutout
+# Wiring cutout
 WIRING_W = 35
 WIRING_H = 12
 WIRING_D = 18
 
-# Switch Cutout
+# Switch cutout
 SWITCH_CUTOUT_Y_OFFSET = 45 + PCB_CLEARANCE
 SWITCH_CUTOUT_W = 6
 SWITCH_CUTOUT_H = 2
 SWITCH_CUTOUT_D = WALL_THICKNESS + 1
 SWITCH_CUTOUT_FILLET = 2
 
-# Charging Cutout
+# Charging cutout
 CHARGING_CUTOUT_X_OFFSET = 8.8 + PCB_CLEARANCE
 CHARGING_CUTOUT_Y_OFFSET = 3.8
 CHARGING_CUTOUT_Z_OFFSET = 6.35
@@ -68,10 +77,11 @@ CHARGING_CUTOUT_H = 4
 CHARGING_CUTOUT_D = WALL_THICKNESS + 1
 CHARGING_CUTOUT_FILLET = 2
 
+# Fillets and chamfers
 FILLET_RAD = 1
 CHAMFER_LEN = 1
 
-# Viewer Colors
+# Viewer colors
 VIS_COLOR = Color(1.0, 0.0, 0.0, alpha=0.3)
 CASE_COLOR = Color(0.15, 0.15, 0.15)
 INLAY_COLOR = Color(0.0, 0.3, 0.1)
@@ -93,6 +103,7 @@ def main():
 
     inlay_pieces = []
     visualizations_part = None
+    battery_cover_part = None
 
     hole_wires.sort(key=lambda w: w.center().X)
     hole_wires = hole_wires[:6]
@@ -105,7 +116,7 @@ def main():
     blocks = [make_face(w) for w in hole_wires]
 
     with BuildPart() as base:
-        # Outer Shell
+        # Outer shell
         with BuildPart(mode=Mode.PRIVATE) as outer_tray:
             with BuildSketch(Plane.XY.offset(PLATFORM_THICKNESS + WALL_HEIGHT)):
                 add(pcb_face)
@@ -125,14 +136,14 @@ def main():
         add(outer_tray.part)
         chamfer(base.faces().sort_by(Axis.Z)[-1].edges(), length=CHAMFER_LEN)
 
-        # Inner Void Cutout
+        # Inner void cutout
         with BuildPart(mode=Mode.PRIVATE) as inner_void:
             with BuildSketch(Plane.XY.offset(PLATFORM_THICKNESS + WALL_HEIGHT)):
                 add(pcb_face)
             extrude(amount=-WALL_HEIGHT)
         add(inner_void.part, mode=Mode.SUBTRACT)
 
-        # Internal Platform
+        # Internal platform
         with BuildSketch(Plane.XY):
             add(pcb_face)
         extrude(amount=PLATFORM_THICKNESS)
@@ -152,14 +163,14 @@ def main():
                 Circle(radius=HOLE_RAD)
         extrude(amount=-(PILLAR_TOP_HEIGHT + PILLAR_BASE_HEIGHT), mode=Mode.SUBTRACT)
 
-        # Unified Bounding Box Context for All Cutouts
+        # Get case bounding box
         case_bbox = base.part.bounding_box()
 
-        # Battery Cutout
+        # Battery cutout
         with BuildPart(mode=Mode.PRIVATE) as battery_tool:
             with Locations(Pos(case_bbox.max.X, case_bbox.max.Y - BATTERY_Y_OFFSET, 0)):
                 Box(
-                    BATTERY_D,
+                    BATTERY_D + BATTERY_COVER_DEPTH,
                     BATTERY_W,
                     BATTERY_H,
                     align=(Align.MAX, Align.CENTER, Align.MAX),
@@ -167,7 +178,35 @@ def main():
                 fillet(battery_tool.edges().filter_by(Axis.X), radius=BATTERY_FILLET)
         add(battery_tool.part, mode=Mode.SUBTRACT)
 
-        # Wiring Cutout
+        # Battery cover
+        with BuildPart(mode=Mode.PRIVATE) as battery_cover_builder:
+            # Outer lip
+            with Locations(Pos(case_bbox.max.X, case_bbox.max.Y - BATTERY_Y_OFFSET, -BATTERY_H / 2)):
+                Box(
+                    BATTERY_COVER_LIP_T,
+                    BATTERY_W + 2 * BATTERY_COVER_LIP_W,
+                    BATTERY_H + 2 * BATTERY_COVER_LIP_W,
+                    align=(Align.MIN, Align.CENTER, Align.CENTER),
+                )
+            
+            # Inner plug
+            with Locations(Pos(case_bbox.max.X, case_bbox.max.Y - BATTERY_Y_OFFSET, -BATTERY_H / 2)):
+                Box(
+                    BATTERY_COVER_DEPTH,
+                    BATTERY_W - 2 * BATTERY_COVER_CLEARANCE,
+                    BATTERY_H - 2 * BATTERY_COVER_CLEARANCE,
+                    align=(Align.MAX, Align.CENTER, Align.CENTER),
+                )
+            
+            # Fillet plug and lip edges
+            edges = battery_cover_builder.edges().filter_by(Axis.X).sort_by(Axis.X)
+            fillet(edges[:4], radius=BATTERY_FILLET - BATTERY_COVER_CLEARANCE)
+            fillet(edges[4:], radius=BATTERY_FILLET + BATTERY_COVER_LIP_W)
+            chamfer(battery_cover_builder.faces().sort_by(Axis.X)[-1].edges(), length=0.75)
+            
+        battery_cover_part = battery_cover_builder.part
+
+        # Wiring cutout
         with BuildPart(mode=Mode.PRIVATE) as wiring_tool:
             with BuildSketch(Plane.XY.offset(PLATFORM_THICKNESS)):
                 add(pcb_face)
@@ -188,7 +227,7 @@ def main():
                 )
         add(wiring_tool.part, mode=Mode.SUBTRACT)
 
-        # Switch Cutout
+        # Switch cutout
         with BuildPart(mode=Mode.PRIVATE) as switch_cutout_tool:
             switch_y = case_bbox.max.Y - (
                 SWITCH_CUTOUT_Y_OFFSET + WALL_THICKNESS + CHARGING_CUTOUT_Y_OFFSET
@@ -206,25 +245,21 @@ def main():
                 )
         add(switch_cutout_tool.part, mode=Mode.SUBTRACT)
 
-        # Charging Cutout
+        # Charging cutout
+        charging_x = case_bbox.max.X - CHARGING_CUTOUT_X_OFFSET - WALL_THICKNESS
+        charging_z = PLATFORM_THICKNESS + CHARGING_CUTOUT_Z_OFFSET
         with BuildPart(mode=Mode.PRIVATE) as charging_cutout_tool:
-            charging_x = case_bbox.max.X - (CHARGING_CUTOUT_X_OFFSET + WALL_THICKNESS)
-            charging_z = PLATFORM_THICKNESS + CHARGING_CUTOUT_Z_OFFSET
-            charging_hole_bottom = charging_z - CHARGING_CUTOUT_H / 2
-            charging_cutout_height = (
-                PLATFORM_THICKNESS + WALL_HEIGHT
-            ) - charging_hole_bottom
             with Locations(
                 Pos(
                     charging_x,
                     case_bbox.max.Y - CHARGING_CUTOUT_Y_OFFSET,
-                    charging_hole_bottom,
+                    charging_z - CHARGING_CUTOUT_H / 2,
                 )
             ):
                 Box(
                     CHARGING_CUTOUT_W,
                     CHARGING_CUTOUT_D,
-                    charging_cutout_height,
+                    WALL_HEIGHT - CHARGING_CUTOUT_Z_OFFSET + CHARGING_CUTOUT_H / 2,
                     align=(Align.CENTER, Align.MAX, Align.MIN),
                 )
                 fillet(
@@ -233,7 +268,7 @@ def main():
                 )
         add(charging_cutout_tool.part, mode=Mode.SUBTRACT)
 
-        # Logo Cutout
+        # Logo cutout
         with BuildSketch(mode=Mode.PRIVATE) as logo_sketch:
             for w in logo_wires:
                 try:
@@ -244,27 +279,19 @@ def main():
         if logo_sketch.sketch:
             pcb_bbox = pcb_face.bounding_box()
             pcb_center = pcb_bbox.center()
-            target_width = pcb_bbox.size.X / math.cos(math.radians(TENTING_ANGLE))
-            target_height = pcb_bbox.size.Y
-
             logo_bbox = logo_sketch.sketch.bounding_box()
-            initial_logo_width = logo_bbox.size.X
-            initial_logo_height = logo_bbox.size.Y
 
-            if initial_logo_width > 0 and initial_logo_height > 0:
+            if logo_bbox.size.X > 0 and logo_bbox.size.Y > 0:
                 logo = logo_sketch.sketch.translate(
                     (-logo_bbox.center().X, -logo_bbox.center().Y, 0)
                 )
-                scale_factor = (
-                    min(
-                        target_width / initial_logo_width,
-                        target_height / initial_logo_height,
-                    )
-                    * LOGO_SCALE
-                )
-                logo = logo.scale(scale_factor)
+                scale = min(
+                    (pcb_bbox.size.X / math.cos(math.radians(TENTING_ANGLE))) / logo_bbox.size.X,
+                    pcb_bbox.size.Y / logo_bbox.size.Y,
+                ) * LOGO_SCALE
+                logo = logo.scale(scale)
 
-                # Pre-mirror for left side, and skip for right side (globally mirrored later)
+                # Mirror logo for left side
                 if args.side == "left":
                     logo = mirror(logo, Plane.YZ)
 
@@ -283,7 +310,7 @@ def main():
                 add(logo_builder.part, mode=Mode.SUBTRACT)
                 inlay_pieces.append(logo_builder.part)
 
-        # Front Wall Text Cutout & Inlay
+        # Front wall text and inlay
         front_plane = Plane(
             origin=(case_bbox.center().X, case_bbox.min.Y, BASE_Z),
             x_dir=(1, 0, 0),
@@ -335,31 +362,27 @@ def main():
 
         inlay_part = Compound(inlay_pieces) if inlay_pieces else None
 
-    # Raised Top Piece
+    # Raised top piece
     top_part = None
     top_edge_faces = [make_face(w) for w in top_edge_wires]
     top_cutout_faces = [make_face(w) for w in top_cutout_wires]
     if top_edge_faces:
-        top_piece_z = PLATFORM_THICKNESS + WALL_HEIGHT
         with BuildPart() as top_builder:
-            with BuildSketch(Plane.XY.offset(top_piece_z - TOP_OVERLAP)):
+            with BuildSketch(Plane.XY.offset(TOP_PIECE_Z - TOP_OVERLAP)):
                 add(pcb_face)
                 offset(amount=WALL_THICKNESS)
                 add(top_edge_faces, mode=Mode.INTERSECT)
             extrude(amount=TOP_PIECE_HEIGHT + TOP_OVERLAP)
 
-            # Screen windows (subtracted through the entire height)
+            # Screen windows cutout
             if top_cutout_faces:
-                with BuildSketch(Plane.XY.offset(top_piece_z - TOP_OVERLAP)):
+                with BuildSketch(Plane.XY.offset(TOP_PIECE_Z - TOP_OVERLAP)):
                     add(top_cutout_faces)
                 extrude(amount=TOP_PIECE_HEIGHT + TOP_OVERLAP, mode=Mode.SUBTRACT)
 
-            # Hollow out starting 2mm lower
-            with BuildSketch(Plane.XY.offset(top_piece_z - TOP_OVERLAP)):
+            # Hollow out inner section
+            with BuildSketch(Plane.XY.offset(TOP_PIECE_Z - TOP_OVERLAP)):
                 add(pcb_face)
-                offset(amount=WALL_THICKNESS)
-                add(top_edge_faces, mode=Mode.INTERSECT)
-                offset(amount=-WALL_THICKNESS)
             extrude(
                 amount=TOP_PIECE_HEIGHT - PLATFORM_THICKNESS + TOP_OVERLAP,
                 mode=Mode.SUBTRACT,
@@ -377,8 +400,8 @@ def main():
                     Pos(case_bbox.max.X, switch_y, PLATFORM_THICKNESS + SWITCH_CUTOUT_H)
                 ):
                     Box(
-                        SWITCH_CUTOUT_D,
-                        SWITCH_CUTOUT_W,
+                        SWITCH_CUTOUT_D - 0.15,
+                        SWITCH_CUTOUT_W - 2 * 0.15,
                         WALL_HEIGHT - SWITCH_CUTOUT_H + 1,
                         align=(Align.MAX, Align.CENTER, Align.MIN),
                         mode=Mode.INTERSECT,
@@ -387,35 +410,47 @@ def main():
                 add(switch_proj.part)
 
             # Charging projection
-            charging_hole_top = charging_z + CHARGING_CUTOUT_H / 2
-            charging_proj_height = (
-                PLATFORM_THICKNESS + WALL_HEIGHT
-            ) - charging_hole_top
             with BuildPart(mode=Mode.PRIVATE) as charging_proj:
-                with BuildSketch(Plane.XY.offset(charging_hole_top)):
+                with BuildSketch(Plane.XY.offset(charging_z + CHARGING_CUTOUT_H / 2)):
                     add(pcb_face)
                     offset(amount=WALL_THICKNESS)
                     add(pcb_face, mode=Mode.SUBTRACT)
-                extrude(amount=charging_proj_height)
+                extrude(amount=WALL_HEIGHT - CHARGING_CUTOUT_Z_OFFSET - CHARGING_CUTOUT_H / 2)
 
                 with Locations(
                     Pos(
                         charging_x,
                         case_bbox.max.Y - CHARGING_CUTOUT_Y_OFFSET,
-                        charging_hole_top,
+                        charging_z + CHARGING_CUTOUT_H / 2,
                     )
                 ):
                     Box(
-                        CHARGING_CUTOUT_W,
-                        CHARGING_CUTOUT_D,
-                        charging_proj_height + 1,
+                        CHARGING_CUTOUT_W - 2 * 0.15,
+                        CHARGING_CUTOUT_D - 0.15,
+                        WALL_HEIGHT - CHARGING_CUTOUT_Z_OFFSET - CHARGING_CUTOUT_H / 2 + 1,
                         align=(Align.CENTER, Align.MAX, Align.MIN),
                         mode=Mode.INTERSECT,
                     )
             if charging_proj.part:
                 add(charging_proj.part)
-        # Interlock fit: subtract bottom case to form matching chamfer lips
-        top_part = top_builder.part - base.part
+
+        # Interlock clearance cutout
+        with BuildPart(mode=Mode.PRIVATE) as clearance_tool:
+            # Isolate top section of wall
+            with BuildPart(mode=Mode.PRIVATE) as top_section:
+                add(base.part)
+                with Locations(Pos(case_bbox.center().X, case_bbox.center().Y, TOP_PIECE_Z)):
+                    Box(
+                        1000,
+                        1000,
+                        TOP_OVERLAP + 2.0,
+                        align=(Align.CENTER, Align.CENTER, Align.MAX),
+                        mode=Mode.INTERSECT,
+                    )
+            add(top_section.part)
+            # Offset top section
+            offset(amount=0.15)
+        top_part = top_builder.part - clearance_tool.part
 
     # Visualizations
     if args.vis:
@@ -426,7 +461,7 @@ def main():
             add(charging_cutout_tool.part)
         visualizations_part = vis_builder.part
 
-    # Side Mirroring
+    # Side mirroring
     part = base.part
     if args.side == "right":
         part = mirror(part, Plane.YZ)
@@ -434,15 +469,14 @@ def main():
             inlay_part = mirror(inlay_part, Plane.YZ)
         if top_part is not None:
             top_part = mirror(top_part, Plane.YZ)
+        if battery_cover_part is not None:
+            battery_cover_part = mirror(battery_cover_part, Plane.YZ)
         if visualizations_part is not None:
             visualizations_part = mirror(visualizations_part, Plane.YZ)
 
-    with BuildPart() as final_case:
-        add(part)
-
     if args.show:
-        final_case.part.color = CASE_COLOR
-        show_parts = [final_case.part]
+        part.color = CASE_COLOR
+        show_parts = [part]
         show_names = ["Case"]
 
         if inlay_part is not None:
@@ -455,6 +489,11 @@ def main():
             show_parts.append(top_part)
             show_names.append("Top Piece")
 
+        if battery_cover_part is not None:
+            battery_cover_part.color = Color(0.5, 0.5, 0.5)
+            show_parts.append(battery_cover_part)
+            show_names.append("Battery Cover")
+
         if visualizations_part is not None:
             visualizations_part.color = VIS_COLOR
             show_parts.append(visualizations_part)
@@ -462,19 +501,22 @@ def main():
 
         show(*show_parts, names=show_names)
 
-    # Multi-Material Export
-    output_solids = [final_case.part]
+    # Export files
+    output_solids = [part]
     if inlay_part is not None:
         output_solids.append(inlay_part)
     if top_part is not None:
         output_solids.append(top_part)
     export_step(Compound(output_solids), f"case/build/case_{args.side}.step")
 
-    export_stl(final_case.part, f"case/build/case_{args.side}_main.stl")
+    export_stl(part, f"case/build/case_{args.side}_main.stl")
     if inlay_part is not None:
         export_stl(inlay_part, f"case/build/case_{args.side}_inlay.stl")
     if top_part is not None:
         export_stl(top_part, f"case/build/case_{args.side}_top.stl")
+    if battery_cover_part is not None:
+        export_stl(battery_cover_part, f"case/build/case_{args.side}_battery_cover.stl")
+        export_step(battery_cover_part, f"case/build/case_{args.side}_battery_cover.step")
 
 
 if __name__ == "__main__":
