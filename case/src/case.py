@@ -23,6 +23,7 @@ PILLAR_TOP_OFFSET = 0
 PILLAR_TOP_HEIGHT = 3
 HOLE_RAD = 0.8
 PCB_CLEARANCE = 0.25
+SCREW_HOLE_DEPTH_EXTRA = 4.0
 
 # Derived constants
 ABS_PILLAR_BASE_TOP_Z = PLATFORM_THICKNESS + PILLAR_BASE_HEIGHT
@@ -35,6 +36,7 @@ BATTERY_H = 10
 BATTERY_D = 70
 BATTERY_Y_OFFSET = 42 + PCB_CLEARANCE
 BATTERY_FILLET = 2
+BATTERY_Z_OFFSET = 5.0
 
 # Battery cover configuration
 BATTERY_COVER_DEPTH = 5.0
@@ -165,14 +167,23 @@ def main():
         with BuildSketch(Plane.XY.offset(ABS_PILLAR_TOTAL_TOP_Z)):
             with Locations([f.bounding_box().center() for f in blocks]):
                 Circle(radius=HOLE_RAD)
-        extrude(amount=-(PILLAR_TOP_HEIGHT + PILLAR_BASE_HEIGHT), mode=Mode.SUBTRACT)
+        extrude(
+            amount=-(PILLAR_TOP_HEIGHT + PILLAR_BASE_HEIGHT + SCREW_HOLE_DEPTH_EXTRA),
+            mode=Mode.SUBTRACT,
+        )
 
         # Get case bounding box
         case_bbox = base.part.bounding_box()
 
         # Battery cutout
         with BuildPart(mode=Mode.PRIVATE) as battery_tool:
-            with Locations(Pos(case_bbox.max.X, case_bbox.max.Y - BATTERY_Y_OFFSET, 0)):
+            with Locations(
+                Pos(
+                    case_bbox.max.X,
+                    case_bbox.max.Y - BATTERY_Y_OFFSET,
+                    PLATFORM_THICKNESS - BATTERY_Z_OFFSET,
+                )
+            ):
                 Box(
                     BATTERY_D + BATTERY_COVER_DEPTH,
                     BATTERY_W,
@@ -186,7 +197,11 @@ def main():
         with BuildPart(mode=Mode.PRIVATE) as battery_cover_builder:
             # Outer lip
             with Locations(
-                Pos(case_bbox.max.X, case_bbox.max.Y - BATTERY_Y_OFFSET, -BATTERY_H / 2)
+                Pos(
+                    case_bbox.max.X,
+                    case_bbox.max.Y - BATTERY_Y_OFFSET,
+                    PLATFORM_THICKNESS - BATTERY_Z_OFFSET - BATTERY_H / 2,
+                )
             ):
                 Box(
                     BATTERY_COVER_LIP_T,
@@ -197,7 +212,11 @@ def main():
 
             # Inner plug
             with Locations(
-                Pos(case_bbox.max.X, case_bbox.max.Y - BATTERY_Y_OFFSET, -BATTERY_H / 2)
+                Pos(
+                    case_bbox.max.X,
+                    case_bbox.max.Y - BATTERY_Y_OFFSET,
+                    PLATFORM_THICKNESS - BATTERY_Z_OFFSET - BATTERY_H / 2,
+                )
             ):
                 Box(
                     BATTERY_COVER_DEPTH,
