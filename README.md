@@ -12,10 +12,14 @@ Source code is built in github actions using the ZMK firmware framework. To buil
 git clone https://github.com/zmkfirmware/zmk.git
 ```
 2. Set up the Zephyr SDK as described [here](https://docs.zephyrproject.org/3.5.0/develop/getting_started/index.html)
-3. From the zmk directory, run the following commands to build the firwmare, ensuring to replace "/path/to/this/repo/config" with the path to the config directory in this repository:
+3. From the zmk directory, run the following commands to build the firmware, ensuring to replace "/path/to/this/repo/config" with the path to the config directory in this repository:
 ```
 cd app
-west build -p -b nice_nano_v2 -- -DSHIELD="chirality nice_view" -DZMK_CONFIG=/path/to/this/repo/config -DEXTRA_CONF_FILE=/path/to/this/repo/config/boards/shields/chirality/chirality.conf
+# To build the left side:
+west build -p -b nice_nano@2.0.0 -- -DSHIELD="chirality_left nice_view_gem" -DZMK_CONFIG=/path/to/this/repo/config
+
+# To build the right side:
+west build -p -b nice_nano@2.0.0 -- -DSHIELD="chirality_right nice_view_gem" -DZMK_CONFIG=/path/to/this/repo/config
 ```
 The built firmware file can be found at "/path/to/zmk/app/build/zephyr/zmk.uf2", and can be flashed with the [flash instructions](#flashing-instructions) above, treating "zmk.uf2" as "firmware.uf2".
 For more information, see the [ZMK documentation](https://zmk.dev/docs/development/local-toolchain/setup/native) and [Zephyr documentation](https://docs.zephyrproject.org/3.5.0/develop/getting_started/index.html) 

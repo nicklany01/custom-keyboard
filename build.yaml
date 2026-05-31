@@ -19,9 +19,7 @@
 #
 ---
 include:
-  - board: nice_nano_v2
+  - board: nice_nano@2.0.0
     shield: "chirality_left nice_view_gem"
-    cmake-args: "-DEXTRA_CONF_FILE=/tmp/zmk-config/config/boards/shields/chirality/chirality.conf"
-  - board: nice_nano_v2
+  - board: nice_nano@2.0.0
     shield: "chirality_right nice_view_gem"
-    cmake-args: "-DEXTRA_CONF_FILE=/tmp/zmk-config/config/boards/shields/chirality/chirality.conf"
