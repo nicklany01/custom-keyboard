@@ -41,6 +41,7 @@ BATTERY_COVER_DEPTH = 5.0
 BATTERY_COVER_LIP_W = 1.5
 BATTERY_COVER_LIP_T = 1.5
 BATTERY_COVER_CLEARANCE = 0.2
+BATTERY_COVER_CHAMFER = 0.75
 
 # Logo settings
 LOGO_SCALE = 0.8
@@ -76,6 +77,9 @@ CHARGING_CUTOUT_W = 9.5
 CHARGING_CUTOUT_H = 4
 CHARGING_CUTOUT_D = WALL_THICKNESS + 1
 CHARGING_CUTOUT_FILLET = 2
+
+# Clearance variables
+TOP_PIECE_CLEARANCE = 0.15
 
 # Fillets and chamfers
 FILLET_RAD = 1
@@ -181,29 +185,36 @@ def main():
         # Battery cover
         with BuildPart(mode=Mode.PRIVATE) as battery_cover_builder:
             # Outer lip
-            with Locations(Pos(case_bbox.max.X, case_bbox.max.Y - BATTERY_Y_OFFSET, -BATTERY_H / 2)):
+            with Locations(
+                Pos(case_bbox.max.X, case_bbox.max.Y - BATTERY_Y_OFFSET, -BATTERY_H / 2)
+            ):
                 Box(
                     BATTERY_COVER_LIP_T,
                     BATTERY_W + 2 * BATTERY_COVER_LIP_W,
                     BATTERY_H + 2 * BATTERY_COVER_LIP_W,
                     align=(Align.MIN, Align.CENTER, Align.CENTER),
                 )
-            
+
             # Inner plug
-            with Locations(Pos(case_bbox.max.X, case_bbox.max.Y - BATTERY_Y_OFFSET, -BATTERY_H / 2)):
+            with Locations(
+                Pos(case_bbox.max.X, case_bbox.max.Y - BATTERY_Y_OFFSET, -BATTERY_H / 2)
+            ):
                 Box(
                     BATTERY_COVER_DEPTH,
                     BATTERY_W - 2 * BATTERY_COVER_CLEARANCE,
                     BATTERY_H - 2 * BATTERY_COVER_CLEARANCE,
                     align=(Align.MAX, Align.CENTER, Align.CENTER),
                 )
-            
+
             # Fillet plug and lip edges
             edges = battery_cover_builder.edges().filter_by(Axis.X).sort_by(Axis.X)
             fillet(edges[:4], radius=BATTERY_FILLET - BATTERY_COVER_CLEARANCE)
             fillet(edges[4:], radius=BATTERY_FILLET + BATTERY_COVER_LIP_W)
-            chamfer(battery_cover_builder.faces().sort_by(Axis.X)[-1].edges(), length=0.75)
-            
+            chamfer(
+                battery_cover_builder.faces().sort_by(Axis.X)[-1].edges(),
+                length=BATTERY_COVER_CHAMFER,
+            )
+
         battery_cover_part = battery_cover_builder.part
 
         # Wiring cutout
@@ -285,10 +296,14 @@ def main():
                 logo = logo_sketch.sketch.translate(
                     (-logo_bbox.center().X, -logo_bbox.center().Y, 0)
                 )
-                scale = min(
-                    (pcb_bbox.size.X / math.cos(math.radians(TENTING_ANGLE))) / logo_bbox.size.X,
-                    pcb_bbox.size.Y / logo_bbox.size.Y,
-                ) * LOGO_SCALE
+                scale = (
+                    min(
+                        (pcb_bbox.size.X / math.cos(math.radians(TENTING_ANGLE)))
+                        / logo_bbox.size.X,
+                        pcb_bbox.size.Y / logo_bbox.size.Y,
+                    )
+                    * LOGO_SCALE
+                )
                 logo = logo.scale(scale)
 
                 # Mirror logo for left side
@@ -383,6 +398,9 @@ def main():
             # Hollow out inner section
             with BuildSketch(Plane.XY.offset(TOP_PIECE_Z - TOP_OVERLAP)):
                 add(pcb_face)
+                offset(amount=WALL_THICKNESS)
+                add(top_edge_faces, mode=Mode.INTERSECT)
+                offset(amount=-WALL_THICKNESS)
             extrude(
                 amount=TOP_PIECE_HEIGHT - PLATFORM_THICKNESS + TOP_OVERLAP,
                 mode=Mode.SUBTRACT,
@@ -400,8 +418,8 @@ def main():
                     Pos(case_bbox.max.X, switch_y, PLATFORM_THICKNESS + SWITCH_CUTOUT_H)
                 ):
                     Box(
-                        SWITCH_CUTOUT_D - 0.15,
-                        SWITCH_CUTOUT_W - 2 * 0.15,
+                        SWITCH_CUTOUT_D - TOP_PIECE_CLEARANCE,
+                        SWITCH_CUTOUT_W - 2 * TOP_PIECE_CLEARANCE,
                         WALL_HEIGHT - SWITCH_CUTOUT_H + 1,
                         align=(Align.MAX, Align.CENTER, Align.MIN),
                         mode=Mode.INTERSECT,
@@ -415,7 +433,11 @@ def main():
                     add(pcb_face)
                     offset(amount=WALL_THICKNESS)
                     add(pcb_face, mode=Mode.SUBTRACT)
-                extrude(amount=WALL_HEIGHT - CHARGING_CUTOUT_Z_OFFSET - CHARGING_CUTOUT_H / 2)
+                extrude(
+                    amount=WALL_HEIGHT
+                    - CHARGING_CUTOUT_Z_OFFSET
+                    - CHARGING_CUTOUT_H / 2
+                )
 
                 with Locations(
                     Pos(
@@ -425,9 +447,12 @@ def main():
                     )
                 ):
                     Box(
-                        CHARGING_CUTOUT_W - 2 * 0.15,
-                        CHARGING_CUTOUT_D - 0.15,
-                        WALL_HEIGHT - CHARGING_CUTOUT_Z_OFFSET - CHARGING_CUTOUT_H / 2 + 1,
+                        CHARGING_CUTOUT_W - 2 * TOP_PIECE_CLEARANCE,
+                        CHARGING_CUTOUT_D - TOP_PIECE_CLEARANCE,
+                        WALL_HEIGHT
+                        - CHARGING_CUTOUT_Z_OFFSET
+                        - CHARGING_CUTOUT_H / 2
+                        + 1,
                         align=(Align.CENTER, Align.MAX, Align.MIN),
                         mode=Mode.INTERSECT,
                     )
@@ -436,20 +461,55 @@ def main():
 
         # Interlock clearance cutout
         with BuildPart(mode=Mode.PRIVATE) as clearance_tool:
-            # Isolate top section of wall
-            with BuildPart(mode=Mode.PRIVATE) as top_section:
-                add(base.part)
-                with Locations(Pos(case_bbox.center().X, case_bbox.center().Y, TOP_PIECE_Z)):
+            # Create a clean outer solid wall section with outer clearance (no inner void yet)
+            with BuildSketch(Plane.XY.offset(TOP_PIECE_Z + TOP_PIECE_CLEARANCE)):
+                add(pcb_face)
+                offset(amount=WALL_THICKNESS + TOP_PIECE_CLEARANCE)
+            extrude(amount=-(TOP_OVERLAP + 2 * TOP_PIECE_CLEARANCE))
+
+            # Apply chamfer to the outer top edges
+            chamfer(
+                clearance_tool.faces().sort_by(Axis.Z)[-1].edges(), length=CHAMFER_LEN
+            )
+
+            # Subtract the inner void with inner clearance to hollow out the wall
+            with BuildSketch(Plane.XY.offset(TOP_PIECE_Z + TOP_PIECE_CLEARANCE)):
+                add(pcb_face)
+                offset(amount=-TOP_PIECE_CLEARANCE)
+            extrude(amount=-(TOP_OVERLAP + 2 * TOP_PIECE_CLEARANCE), mode=Mode.SUBTRACT)
+
+            # Subtract switch cutout from clearance tool
+            with BuildPart(mode=Mode.PRIVATE) as switch_clear_cut:
+                with Locations(
+                    Pos(case_bbox.max.X, switch_y, TOP_PIECE_Z - TOP_OVERLAP - 0.2)
+                ):
                     Box(
-                        1000,
-                        1000,
+                        WALL_THICKNESS + 2,
+                        SWITCH_CUTOUT_W - 2 * TOP_PIECE_CLEARANCE,
                         TOP_OVERLAP + 2.0,
-                        align=(Align.CENTER, Align.CENTER, Align.MAX),
-                        mode=Mode.INTERSECT,
+                        align=(Align.MAX, Align.CENTER, Align.MIN),
                     )
-            add(top_section.part)
-            # Offset top section
-            offset(amount=0.15)
+            if switch_clear_cut.part:
+                add(switch_clear_cut.part, mode=Mode.SUBTRACT)
+
+            # Subtract charging cutout from clearance tool
+            with BuildPart(mode=Mode.PRIVATE) as charging_clear_cut:
+                with Locations(
+                    Pos(
+                        charging_x,
+                        case_bbox.max.Y - CHARGING_CUTOUT_Y_OFFSET,
+                        TOP_PIECE_Z - TOP_OVERLAP - 0.2,
+                    )
+                ):
+                    Box(
+                        CHARGING_CUTOUT_W - 2 * TOP_PIECE_CLEARANCE,
+                        WALL_THICKNESS + 2,
+                        TOP_OVERLAP + 2.0,
+                        align=(Align.CENTER, Align.MAX, Align.MIN),
+                    )
+            if charging_clear_cut.part:
+                add(charging_clear_cut.part, mode=Mode.SUBTRACT)
+
         top_part = top_builder.part - clearance_tool.part
 
     # Visualizations
@@ -516,7 +576,9 @@ def main():
         export_stl(top_part, f"case/build/case_{args.side}_top.stl")
     if battery_cover_part is not None:
         export_stl(battery_cover_part, f"case/build/case_{args.side}_battery_cover.stl")
-        export_step(battery_cover_part, f"case/build/case_{args.side}_battery_cover.step")
+        export_step(
+            battery_cover_part, f"case/build/case_{args.side}_battery_cover.step"
+        )
 
 
 if __name__ == "__main__":
