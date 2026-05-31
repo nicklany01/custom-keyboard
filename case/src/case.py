@@ -12,6 +12,9 @@ WALL_THICKNESS = 2
 WALL_HEIGHT = 12.3
 PLATFORM_THICKNESS = 2
 
+# Raised Top Piece (screen bezel that sits above the wall)
+TOP_PIECE_HEIGHT = 5.0
+
 # Pillars
 PILLAR_BASE_HEIGHT = 2
 PILLAR_BASE_OFFSET = 0
@@ -32,6 +35,8 @@ BATTERY_Y_OFFSET = 42 + PCB_CLEARANCE
 BATTERY_FILLET = 2
 
 LOGO_SCALE = 0.8
+LOGO_DEPTH = 1.0
+TOP_OVERLAP = 2.0
 
 # Front Text Configuration
 TEXT_STR = "By Nick Lany"
@@ -49,8 +54,8 @@ WIRING_D = 18
 
 # Switch Cutout
 SWITCH_CUTOUT_Y_OFFSET = 45 + PCB_CLEARANCE
-SWITCH_CUTOUT_W = 10
-SWITCH_CUTOUT_H = 6
+SWITCH_CUTOUT_W = 6
+SWITCH_CUTOUT_H = 2
 SWITCH_CUTOUT_D = WALL_THICKNESS + 1
 SWITCH_CUTOUT_FILLET = 2
 
@@ -58,8 +63,8 @@ SWITCH_CUTOUT_FILLET = 2
 CHARGING_CUTOUT_X_OFFSET = 8.8 + PCB_CLEARANCE
 CHARGING_CUTOUT_Y_OFFSET = 3.8
 CHARGING_CUTOUT_Z_OFFSET = 6.35
-CHARGING_CUTOUT_W = 12.0
-CHARGING_CUTOUT_H = 6.0
+CHARGING_CUTOUT_W = 9.5
+CHARGING_CUTOUT_H = 4
 CHARGING_CUTOUT_D = WALL_THICKNESS + 1
 CHARGING_CUTOUT_FILLET = 2
 
@@ -70,6 +75,7 @@ CHAMFER_LEN = 1
 VIS_COLOR = Color(1.0, 0.0, 0.0, alpha=0.3)
 CASE_COLOR = Color(0.15, 0.15, 0.15)
 INLAY_COLOR = Color(0.0, 0.3, 0.1)
+TOP_COLOR = Color(0.5, 0.5, 0.5)
 
 
 def main():
@@ -82,6 +88,8 @@ def main():
     pcb_wires = import_svg("case/build/pcb_outline.svg")
     hole_wires = import_svg("case/build/mounting_holes.svg")
     logo_wires = import_svg("assets/logo.svg")
+    top_edge_wires = Wire.combine(import_svg("case/build/top_edge.svg"))
+    top_cutout_wires = Wire.combine(import_svg("case/build/top_cutout.svg"))
 
     inlay_pieces = []
     visualizations_part = None
@@ -189,11 +197,11 @@ def main():
                 Box(
                     SWITCH_CUTOUT_D,
                     SWITCH_CUTOUT_W,
-                    SWITCH_CUTOUT_H,
+                    WALL_HEIGHT,
                     align=(Align.MAX, Align.CENTER, Align.MIN),
                 )
                 fillet(
-                    switch_cutout_tool.edges().filter_by(Axis.X),
+                    switch_cutout_tool.edges().filter_by(Axis.X).sort_by(Axis.Z)[:2],
                     radius=SWITCH_CUTOUT_FILLET,
                 )
         add(switch_cutout_tool.part, mode=Mode.SUBTRACT)
@@ -202,17 +210,25 @@ def main():
         with BuildPart(mode=Mode.PRIVATE) as charging_cutout_tool:
             charging_x = case_bbox.max.X - (CHARGING_CUTOUT_X_OFFSET + WALL_THICKNESS)
             charging_z = PLATFORM_THICKNESS + CHARGING_CUTOUT_Z_OFFSET
+            charging_hole_bottom = charging_z - CHARGING_CUTOUT_H / 2
+            charging_cutout_height = (
+                PLATFORM_THICKNESS + WALL_HEIGHT
+            ) - charging_hole_bottom
             with Locations(
-                Pos(charging_x, case_bbox.max.Y - CHARGING_CUTOUT_Y_OFFSET, charging_z)
+                Pos(
+                    charging_x,
+                    case_bbox.max.Y - CHARGING_CUTOUT_Y_OFFSET,
+                    charging_hole_bottom,
+                )
             ):
                 Box(
                     CHARGING_CUTOUT_W,
                     CHARGING_CUTOUT_D,
-                    CHARGING_CUTOUT_H,
-                    align=(Align.CENTER, Align.MAX, Align.CENTER),
+                    charging_cutout_height,
+                    align=(Align.CENTER, Align.MAX, Align.MIN),
                 )
                 fillet(
-                    charging_cutout_tool.edges().filter_by(Axis.Y),
+                    charging_cutout_tool.edges().filter_by(Axis.Y).sort_by(Axis.Z)[:2],
                     radius=CHARGING_CUTOUT_FILLET,
                 )
         add(charging_cutout_tool.part, mode=Mode.SUBTRACT)
@@ -226,27 +242,43 @@ def main():
                     pass
 
         if logo_sketch.sketch:
-            battery_bbox = battery_tool.part.bounding_box()
-            target_width_y = battery_bbox.size.Y
-            target_center_y = battery_bbox.center().Y
-            target_center_z = (battery_bbox.min.Z + case_bbox.min.Z) / 2
+            pcb_bbox = pcb_face.bounding_box()
+            pcb_center = pcb_bbox.center()
+            target_width = pcb_bbox.size.X / math.cos(math.radians(TENTING_ANGLE))
+            target_height = pcb_bbox.size.Y
+
             logo_bbox = logo_sketch.sketch.bounding_box()
             initial_logo_width = logo_bbox.size.X
+            initial_logo_height = logo_bbox.size.Y
 
-            if initial_logo_width > 0:
+            if initial_logo_width > 0 and initial_logo_height > 0:
                 logo = logo_sketch.sketch.translate(
                     (-logo_bbox.center().X, -logo_bbox.center().Y, 0)
                 )
-                logo = logo.scale((target_width_y / initial_logo_width) * LOGO_SCALE)
+                scale_factor = (
+                    min(
+                        target_width / initial_logo_width,
+                        target_height / initial_logo_height,
+                    )
+                    * LOGO_SCALE
+                )
+                logo = logo.scale(scale_factor)
 
-                if args.side == "right":
+                # Pre-mirror for left side, and skip for right side (globally mirrored later)
+                if args.side == "left":
                     logo = mirror(logo, Plane.YZ)
 
+                bottom_plane = (
+                    Plane.XY
+                    * Pos(pcb_center.X, 0, BASE_Z)
+                    * Rot(TILT_ANGLE, TENTING_ANGLE, 0)
+                )
+
                 with BuildPart(mode=Mode.PRIVATE) as logo_builder:
-                    with BuildSketch(Plane.YZ.offset(case_bbox.max.X)):
-                        with Locations(Pos(target_center_y, target_center_z)):
+                    with BuildSketch(bottom_plane):
+                        with Locations(Pos(0, pcb_center.Y)):
                             add(logo)
-                    extrude(amount=-WALL_THICKNESS)
+                    extrude(amount=LOGO_DEPTH)
 
                 add(logo_builder.part, mode=Mode.SUBTRACT)
                 inlay_pieces.append(logo_builder.part)
@@ -303,6 +335,88 @@ def main():
 
         inlay_part = Compound(inlay_pieces) if inlay_pieces else None
 
+    # Raised Top Piece
+    top_part = None
+    top_edge_faces = [make_face(w) for w in top_edge_wires]
+    top_cutout_faces = [make_face(w) for w in top_cutout_wires]
+    if top_edge_faces:
+        top_piece_z = PLATFORM_THICKNESS + WALL_HEIGHT
+        with BuildPart() as top_builder:
+            with BuildSketch(Plane.XY.offset(top_piece_z - TOP_OVERLAP)):
+                add(pcb_face)
+                offset(amount=WALL_THICKNESS)
+                add(top_edge_faces, mode=Mode.INTERSECT)
+            extrude(amount=TOP_PIECE_HEIGHT + TOP_OVERLAP)
+
+            # Screen windows (subtracted through the entire height)
+            if top_cutout_faces:
+                with BuildSketch(Plane.XY.offset(top_piece_z - TOP_OVERLAP)):
+                    add(top_cutout_faces)
+                extrude(amount=TOP_PIECE_HEIGHT + TOP_OVERLAP, mode=Mode.SUBTRACT)
+
+            # Hollow out starting 2mm lower
+            with BuildSketch(Plane.XY.offset(top_piece_z - TOP_OVERLAP)):
+                add(pcb_face)
+                offset(amount=WALL_THICKNESS)
+                add(top_edge_faces, mode=Mode.INTERSECT)
+                offset(amount=-WALL_THICKNESS)
+            extrude(
+                amount=TOP_PIECE_HEIGHT - PLATFORM_THICKNESS + TOP_OVERLAP,
+                mode=Mode.SUBTRACT,
+            )
+
+            # Switch projection
+            with BuildPart(mode=Mode.PRIVATE) as switch_proj:
+                with BuildSketch(Plane.XY.offset(PLATFORM_THICKNESS + SWITCH_CUTOUT_H)):
+                    add(pcb_face)
+                    offset(amount=WALL_THICKNESS)
+                    add(pcb_face, mode=Mode.SUBTRACT)
+                extrude(amount=WALL_HEIGHT - SWITCH_CUTOUT_H)
+
+                with Locations(
+                    Pos(case_bbox.max.X, switch_y, PLATFORM_THICKNESS + SWITCH_CUTOUT_H)
+                ):
+                    Box(
+                        SWITCH_CUTOUT_D,
+                        SWITCH_CUTOUT_W,
+                        WALL_HEIGHT - SWITCH_CUTOUT_H + 1,
+                        align=(Align.MAX, Align.CENTER, Align.MIN),
+                        mode=Mode.INTERSECT,
+                    )
+            if switch_proj.part:
+                add(switch_proj.part)
+
+            # Charging projection
+            charging_hole_top = charging_z + CHARGING_CUTOUT_H / 2
+            charging_proj_height = (
+                PLATFORM_THICKNESS + WALL_HEIGHT
+            ) - charging_hole_top
+            with BuildPart(mode=Mode.PRIVATE) as charging_proj:
+                with BuildSketch(Plane.XY.offset(charging_hole_top)):
+                    add(pcb_face)
+                    offset(amount=WALL_THICKNESS)
+                    add(pcb_face, mode=Mode.SUBTRACT)
+                extrude(amount=charging_proj_height)
+
+                with Locations(
+                    Pos(
+                        charging_x,
+                        case_bbox.max.Y - CHARGING_CUTOUT_Y_OFFSET,
+                        charging_hole_top,
+                    )
+                ):
+                    Box(
+                        CHARGING_CUTOUT_W,
+                        CHARGING_CUTOUT_D,
+                        charging_proj_height + 1,
+                        align=(Align.CENTER, Align.MAX, Align.MIN),
+                        mode=Mode.INTERSECT,
+                    )
+            if charging_proj.part:
+                add(charging_proj.part)
+        # Interlock fit: subtract bottom case to form matching chamfer lips
+        top_part = top_builder.part - base.part
+
     # Visualizations
     if args.vis:
         with BuildPart() as vis_builder:
@@ -318,6 +432,8 @@ def main():
         part = mirror(part, Plane.YZ)
         if inlay_part is not None:
             inlay_part = mirror(inlay_part, Plane.YZ)
+        if top_part is not None:
+            top_part = mirror(top_part, Plane.YZ)
         if visualizations_part is not None:
             visualizations_part = mirror(visualizations_part, Plane.YZ)
 
@@ -334,6 +450,11 @@ def main():
             show_parts.append(inlay_part)
             show_names.append("Inlay Features")
 
+        if top_part is not None:
+            top_part.color = TOP_COLOR
+            show_parts.append(top_part)
+            show_names.append("Top Piece")
+
         if visualizations_part is not None:
             visualizations_part.color = VIS_COLOR
             show_parts.append(visualizations_part)
@@ -345,11 +466,15 @@ def main():
     output_solids = [final_case.part]
     if inlay_part is not None:
         output_solids.append(inlay_part)
+    if top_part is not None:
+        output_solids.append(top_part)
     export_step(Compound(output_solids), f"case/build/case_{args.side}.step")
 
     export_stl(final_case.part, f"case/build/case_{args.side}_main.stl")
     if inlay_part is not None:
         export_stl(inlay_part, f"case/build/case_{args.side}_inlay.stl")
+    if top_part is not None:
+        export_stl(top_part, f"case/build/case_{args.side}_top.stl")
 
 
 if __name__ == "__main__":
