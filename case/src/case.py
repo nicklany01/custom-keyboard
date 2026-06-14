@@ -582,22 +582,22 @@ def main():
 
     # Export files
     output_solids = [part]
+    bottom_solids = [part]
     if inlay_part is not None:
         output_solids.append(inlay_part)
+        bottom_solids.append(inlay_part)
     if top_part is not None:
         output_solids.append(top_part)
-    export_step(Compound(output_solids), f"case/build/case_{args.side}.step")
-
-    export_stl(part, f"case/build/case_{args.side}_main.stl")
-    if inlay_part is not None:
-        export_stl(inlay_part, f"case/build/case_{args.side}_inlay.stl")
-    if top_part is not None:
-        export_stl(top_part, f"case/build/case_{args.side}_top.stl")
     if battery_cover_part is not None:
-        export_stl(battery_cover_part, f"case/build/case_{args.side}_battery_cover.stl")
-        export_step(
-            battery_cover_part, f"case/build/case_{args.side}_battery_cover.step"
-        )
+        output_solids.append(battery_cover_part)
+
+    export_step(Compound(output_solids), f"case/build/case_{args.side}.step")
+    export_step(Compound(bottom_solids), f"case/build/case_{args.side}_bottom.step")
+
+    if top_part is not None:
+        export_step(top_part, f"case/build/case_{args.side}_top.step")
+    if battery_cover_part is not None:
+        export_step(battery_cover_part, f"case/build/case_{args.side}_battery_cover.step")
 
 
 if __name__ == "__main__":

@@ -75,7 +75,7 @@ def main():
     if args.show:
         show(final_case)
 
-    export_stl(final_case.part, f"case/build/top_plate_{args.side}.stl")
+    export_step(final_case.part, f"case/build/top_plate_{args.side}.step")
 
 
 if __name__ == "__main__":
