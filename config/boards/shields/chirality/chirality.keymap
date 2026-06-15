@@ -13,13 +13,13 @@
     vol_encoder: vol_encoder {
       compatible = "zmk,behavior-sensor-rotate";
       #sensor-binding-cells = <0>;
-      bindings = <&kp C_VOL_DN>, <&kp C_VOL_UP>;
+      bindings = <&kp C_VOL_UP>, <&kp C_VOL_DN>;
     };
     
     brightness_encoder: brightness_encoder {
         compatible = "zmk,behavior-sensor-rotate";
         #sensor-binding-cells = <0>;
-        bindings = <&kp C_BRIGHTNESS_DEC>, <&kp C_BRIGHTNESS_INC>;
+        bindings = <&kp C_BRIGHTNESS_INC>, <&kp C_BRIGHTNESS_DEC>;
     };
 
     scroll_encoder: scroll_encoder {
@@ -78,6 +78,15 @@
       tapping-term-ms = <400>;
     };
 
+		hold_tap: hold_tap {
+			compatible = "zmk,behavior-hold-tap";
+			label = "HOLD_TAP";
+			bindings = <&kp>, <&kp>;
+
+			#binding-cells = <2>;
+			tapping-term-ms = <300>;
+		};
+
     b_dec_inc: b_dec_inc {
       compatible = "zmk,behavior-tap-dance";
       label = "B_DEC_INC";
@@ -108,10 +117,10 @@
     base {
       label = "Base";
       bindings = <
-        &kp Q        &kp W            &kp E                &kp R           &kp T      &kp Y      &kp U           &kp I                 &kp O             &kp P
-        &hm LCTRL A  &hm LEFT_META S  &shift LEFT_SHIFT D  &hm LEFT_ALT F  &kp G      &kp H      &hm LEFT_ALT J  &shift RIGHT_SHIFT K  &hm RIGHT_META L  &hm RCTRL SEMICOLON
-        &kp Z        &kp X            &kp C                &kp V           &kp B      &kp N      &kp M           &kp COMMA             &kp DOT           &kp FSLH
-                     &kp LG(C)    &kp TAB      &mo 2      &kp SPACE      &kp RET    &mo 3      &mo 4    &pp_n_p
+        &kp Q        &kp W        &kp E           &kp R       &kp T      &kp Y    &kp U       &kp I           &kp O        &kp P
+        &hm LCTRL A  &hm LMETA S  &shift LSHFT D  &hm LALT F  &kp G      &kp H    &hm LALT J  &shift RSHFT K  &hm RMETA L  &hm RCTRL SEMI
+        &kp Z        &kp X        &kp C           &kp V       &kp B      &kp N    &kp M       &kp COMMA       &kp DOT      &kp FSLH
+                     &kp LG(C)    &kp TAB         &mo 2       &kp SPACE  &kp RET  &mo 3       &mo 4           &pp_n_p
       >;
       sensor-bindings = <&window_scroll_encoder &vol_encoder>;
     };
@@ -119,10 +128,10 @@
     gaming {
       label = "Gaming";
       bindings = <
-        &kp Q  &kp W  &kp E      &kp R  &kp T        &kp Y      &kp U  &kp I        &kp O    &kp P
-        &kp A  &kp S  &kp D      &kp F  &kp G        &kp H      &kp J  &kp K        &kp L    &kp SEMI
-        &kp Z  &kp X  &kp C      &kp V  &kp B        &kp N      &kp M  &kp COMMA    &kp DOT  &kp FSLH
-            &kp LG(C)    &kp LEFT_SHIFT      &mo 2      &kp SPACE      &kp RET    &mo 3      &mo 4    &pp_n_p
+        &kp Q  &kp W      &kp E      &kp R  &kp T            &kp Y    &kp U  &kp I      &kp O    &kp P
+        &kp A  &kp S      &kp D      &kp F  &kp G            &kp H    &kp J  &kp K      &kp L    &kp SEMI
+        &kp Z  &kp X      &kp C      &kp V  &hold_tap TAB B  &kp N    &kp M  &kp COMMA  &kp DOT  &kp FSLH
+               &kp LG(C)  &kp LSHFT  &mo 2  &kp SPACE        &kp RET  &mo 3  &mo 4      &pp_n_p
       >;
       sensor-bindings = <&window_scroll_encoder &vol_encoder>;
     };
@@ -130,10 +139,10 @@
     numbers {
       label = "Numbers";
       bindings = <
-        &kp F1              &kp F2                  &kp F3                      &kp F4                 &kp F5          &kp F6         &kp F7                 &kp F8                 &kp F9             &kp F10
-        &hm LCTRL NUMBER_1  &hm LEFT_META NUMBER_2  &shift LEFT_SHIFT NUMBER_3  &hm LEFT_ALT NUMBER_4  &kp NUMBER_5    &kp NUMBER_6   &hm LEFT_ALT NUMBER_7  &shift RIGHT_SHIFT N8  &hm RIGHT_META N9  &hm LCTRL N0
-        &kp GRAVE           &kp TILDE               &kp MINUS                   &kp PLUS               &kp EQUAL       &kp BACKSLASH  &kp PIPE               &kp UNDERSCORE         &trans             &trans
-                                            &kp LG(C)  &kp TAB                       &mo 2                  &kp SPACE       &kp RETURN     &mo 3                  &mo 4     &b_dec_inc
+        &kp F1        &kp F2        &kp F3           &kp F4       &kp F5     &kp F6    &kp F7       &kp F8           &kp F9        &kp F10
+        &hm LCTRL N1  &hm LMETA N2  &shift LSHFT N3  &hm LALT N4  &kp N5     &kp N6    &hm LALT N7  &shift RSHFT N8  &hm RMETA N9  &hm LCTRL N0
+        &kp GRAVE     &kp TILDE     &kp MINUS        &kp PLUS     &kp EQUAL  &kp BSLH  &kp PIPE     &kp UNDER        &trans        &trans
+                      &kp LG(C)     &kp TAB          &mo 2        &kp SPACE  &kp RET   &mo 3        &mo 4            &b_dec_inc
       >;
       sensor-bindings = <&window_scroll_encoder &brightness_encoder>;
     };
@@ -141,10 +150,10 @@
     symbols {
       label = "Symbols";
       bindings = <
-        &kp F11    &kp F12        &kp F13         &kp F14       &kp F15      &kp F16     &kp F17               &kp F18               &kp F19     &kp DELETE
-        &hm LCTRL LEFT_PARENTHESIS  &hm LEFT_META RIGHT_PARENTHESIS  &shift LEFT_SHIFT LEFT_BRACE  &hm LEFT_ALT RIGHT_BRACE  &kp DOUBLE_QUOTES    &kp LEFT        &kp DOWN_ARROW  &kp UP_ARROW  &kp RIGHT  &kp BACKSPACE
-        &kp LESS_THAN               &kp GREATER_THAN                 &kp LEFT_BRACKET              &kp RIGHT_BRACKET         &kp SQT              &kp HOME        &kp PAGE_DOWN   &kp PAGE_UP   &kp END    &kp K_CONTEXT_MENU
-            &kp LG(C)    &kp TAB      &mo 2      &kp SPACE      &kp RET    &mo 3      &mo 4    &pp_n_p
+        &kp F11         &kp F12         &kp F13            &kp F14        &kp F15    &kp F16   &kp F17    &kp F18    &kp INSERT  &kp DELETE
+        &hm LCTRL LPAR  &hm LMETA RPAR  &shift LSHFT LBRC  &hm LALT RBRC  &kp DQT    &kp LEFT  &kp DOWN   &kp UP     &kp RIGHT   &kp BSPC
+        &kp LT          &kp GT          &kp LBKT           &kp RBKT       &kp SQT    &kp HOME  &kp PG_DN  &kp PG_UP  &kp END     &kp K_CMENU
+                        &kp LG(C)       &kp TAB            &mo 2          &kp SPACE  &kp RET   &mo 3      &mo 4      &pp_n_p
       >;
       sensor-bindings = <&window_scroll_encoder &vol_encoder>;
     };
@@ -152,10 +161,10 @@
     misc {
       label = "Misc";
       bindings = <
-        &kp LCTRL        &kp LEFT_META        &kp LEFT_SHIFT        &kp LEFT_ALT        &kp CAPS      &msc SCRL_LEFT  &msc SCRL_DOWN  &msc SCRL_UP  &msc SCRL_RIGHT  &mkp RCLK 
-        &bt BT_SEL 0  &bt BT_SEL 1  &bt BT_SEL 2  &bt BT_SEL 3  &bt BT_SEL 4    &mmv MOVE_LEFT  &mmv MOVE_DOWN  &mmv MOVE_UP  &mmv MOVE_RIGHT  &mkp LCLK
-        &rgb_ug RGB_SPD        &rgb_ug RGB_SPI        &rgb_ug RGB_EFR        &rgb_ug RGB_EFF        &bt BT_CLR      &mkp MB4        &mkp LCLK       &mkp RCLK     &mkp MCLK        &mkp MB5
-            &rgb_ug RGB_TOG    &kp TAB      &mo 2      &kp SPACE      &kp RET    &mo 3      &mo 4    &pp_n_p
+        &kp LCTRL        &kp LMETA        &kp LSHFT        &kp LALT         &kp CAPS      &msc SCRL_LEFT  &msc SCRL_DOWN  &msc SCRL_UP  &msc SCRL_RIGHT  &mkp RCLK
+        &bt BT_SEL 0     &bt BT_SEL 1     &bt BT_SEL 2     &bt BT_SEL 3     &bt BT_SEL 4  &mmv MOVE_LEFT  &mmv MOVE_DOWN  &mmv MOVE_UP  &mmv MOVE_RIGHT  &mkp LCLK
+        &rgb_ug RGB_SPD  &rgb_ug RGB_SPI  &rgb_ug RGB_EFR  &rgb_ug RGB_EFF  &bt BT_CLR    &mkp MB4        &mkp LCLK       &mkp RCLK     &mkp MCLK        &mkp MB5
+                         &rgb_ug RGB_TOG  &kp TAB          &mo 2            &kp SPACE     &kp RET         &mo 3           &mo 4         &pp_n_p
       >;
       sensor-bindings = <&rgb_bri_encoder &rgb_hue_encoder>;
     };
