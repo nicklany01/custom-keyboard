@@ -13,3 +13,4 @@ gerberfiles/
 *.rpt
 *.log
 *.lck
+.history

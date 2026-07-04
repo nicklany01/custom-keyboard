@@ -42,13 +42,13 @@ BATTERY_Z_OFFSET = 5.0
 BATTERY_COVER_DEPTH = 5.0
 BATTERY_COVER_LIP_W = 1.5
 BATTERY_COVER_LIP_T = 1.5
-BATTERY_COVER_CLEARANCE = 0.2
+BATTERY_COVER_CLEARANCE = 0.1
 BATTERY_COVER_CHAMFER = 0.75
 
 # Logo settings
 LOGO_SCALE = 0.8
 LOGO_DEPTH = 1.0
-TOP_OVERLAP = 2.0
+TOP_OVERLAP = 5.5
 
 # Front text configuration
 TEXT_STR = "By Nick Lany"
@@ -67,7 +67,7 @@ WIRING_D = 18
 # Switch cutout
 SWITCH_CUTOUT_Y_OFFSET = 45 + PCB_CLEARANCE
 SWITCH_CUTOUT_W = 6
-SWITCH_CUTOUT_H = 2
+SWITCH_CUTOUT_H = 3
 SWITCH_CUTOUT_D = WALL_THICKNESS + 1
 SWITCH_CUTOUT_FILLET = 2
 
@@ -76,7 +76,7 @@ CHARGING_CUTOUT_X_OFFSET = 8.8 + PCB_CLEARANCE
 CHARGING_CUTOUT_Y_OFFSET = 3.8
 CHARGING_CUTOUT_Z_OFFSET = 6.35
 CHARGING_CUTOUT_W = 9.5
-CHARGING_CUTOUT_H = 4
+CHARGING_CUTOUT_H = 5
 CHARGING_CUTOUT_D = WALL_THICKNESS + 1
 CHARGING_CUTOUT_FILLET = 2
 
@@ -597,7 +597,9 @@ def main():
     if top_part is not None:
         export_step(top_part, f"case/build/case_{args.side}_top.step")
     if battery_cover_part is not None:
-        export_step(battery_cover_part, f"case/build/case_{args.side}_battery_cover.step")
+        export_step(
+            battery_cover_part, f"case/build/case_{args.side}_battery_cover.step"
+        )
 
 
 if __name__ == "__main__":
